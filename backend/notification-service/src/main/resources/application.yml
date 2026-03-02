@@ -1,0 +1,24 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: notification-service
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/notification-db}
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:pasanmama5@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:qemj tqaa ecdl dtor}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+access-control:
+  notification-send: BOOKING_CASHIER,OWNER
+  notification-view: BOOKING_CASHIER,OWNER

@@ -1,0 +1,25 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: payment-service
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/payment-db}
+
+booking:
+  service:
+    url: ${BOOKING_SERVICE_URL:http://localhost:8083}
+
+notification:
+  service:
+    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
+
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:your_stripe_secret_key_here}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY:your_stripe_publishable_key_here}
+
+access-control:
+  payment-manage: BOOKING_CASHIER,OWNER
+  payment-view: BOOKING_CASHIER,OWNER

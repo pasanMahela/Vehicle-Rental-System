@@ -1,0 +1,48 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:3000"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/**
+
+        - id: vehicle-service
+          uri: ${VEHICLE_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/vehicles/**
+
+        - id: booking-service
+          uri: ${BOOKING_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/bookings/**
+
+        - id: payment-service
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/payments/**
+
+        - id: maintenance-service
+          uri: ${MAINTENANCE_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/maintenance/**
+
+        - id: notification-service
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/notifications/**
+
+jwt:
+  secret: ${JWT_SECRET:OrchidVehicleRentalSecretKeyForJWTTokenGeneration2024SecureKey}

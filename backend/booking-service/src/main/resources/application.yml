@@ -1,0 +1,30 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: booking-service
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/booking-db}
+
+vehicle:
+  service:
+    url: ${VEHICLE_SERVICE_URL:http://localhost:8082}
+
+payment:
+  service:
+    url: ${PAYMENT_SERVICE_URL:http://localhost:8084}
+
+notification:
+  service:
+    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
+
+maintenance:
+  service:
+    url: ${MAINTENANCE_SERVICE_URL:http://localhost:8085}
+
+access-control:
+  booking-manage: BOOKING_CASHIER,OWNER
+  booking-complete: BOOKING_CASHIER,OWNER
+  booking-view: BOOKING_CASHIER,REPAIR_ADVISOR,OWNER

@@ -1,0 +1,13 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: vehicle-service
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/vehicle-db}
+
+access-control:
+  vehicle-crud: OWNER
+  vehicle-status: REPAIR_ADVISOR,OWNER
