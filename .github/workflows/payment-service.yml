@@ -12,7 +12,6 @@ on:
       - 'backend/payment-service/**'
 
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/payment-service
   SERVICE_PATH: backend/payment-service
 
 jobs:
@@ -126,6 +125,14 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
+      - name: Validate Docker credentials
+        run: |
+          if [ -z "${{ secrets.DOCKER_USERNAME }}" ]; then
+            echo "ERROR: DOCKER_USERNAME secret is not set"
+            exit 1
+          fi
+          echo "Docker username is configured"
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -148,7 +155,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.DOCKER_IMAGE }}
+          images: ${{ secrets.DOCKER_USERNAME }}/payment-service
           tags: |
             type=ref,event=branch
             type=sha,prefix=
@@ -187,4 +194,4 @@ jobs:
           acrName: ${{ secrets.ACR_NAME }}
           containerAppName: payment-service
           resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          imageToDeploy: ${{ env.DOCKER_IMAGE }}:latest
+          imageToDeploy: ${{ secrets.DOCKER_USERNAME }}/payment-service:latest
