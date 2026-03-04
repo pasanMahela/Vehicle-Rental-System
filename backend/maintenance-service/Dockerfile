@@ -1,19 +1,4 @@
-FROM maven:3.9-eclipse-temurin-21 AS build
-WORKDIR /app
-COPY pom.xml ./pom.xml
-COPY api-gateway/pom.xml ./api-gateway/pom.xml
-COPY auth-service/pom.xml ./auth-service/pom.xml
-COPY vehicle-service/pom.xml ./vehicle-service/pom.xml
-COPY booking-service/pom.xml ./booking-service/pom.xml
-COPY payment-service/pom.xml ./payment-service/pom.xml
-COPY maintenance-service/pom.xml ./maintenance-service/pom.xml
-COPY notification-service/pom.xml ./notification-service/pom.xml
-RUN mvn dependency:go-offline -pl maintenance-service -am -B || true
-COPY maintenance-service/src ./maintenance-service/src
-RUN mvn package -pl maintenance-service -am -DskipTests -B
-
-FROM eclipse-temurin:21-jre
-WORKDIR /app
-COPY --from=build /app/maintenance-service/target/*.jar app.jar
-EXPOSE 8085
-ENTRYPOINT ["java", "-jar", "app.jar"]
+FROM eclipse-temurin:21-jdk-alpine
+VOLUME /tmp
+COPY target/maintenance-service-0.0.1-SNAPSHOT.jar maintenance-service.jar
+ENTRYPOINT ["java","-jar","/maintenance-service.jar"]
