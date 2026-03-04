@@ -103,13 +103,13 @@ services:
 
   maintenance-service:
     build:
-      context: ./backend
-      dockerfile: maintenance-service/Dockerfile
+      context: ./backend/maintenance-service
+      dockerfile: Dockerfile
     container_name: maintenance-service
     ports:
       - "8085:8085"
     environment:
-      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/maintenance-db
+      - SPRING_DATA_MONGODB_URI=mongodb+srv://user:user123@cluster0.asncl8a.mongodb.net/maintenance_db?retryWrites=true&w=majority
       - VEHICLE_SERVICE_URL=http://vehicle-service:8082
       - PAYMENT_SERVICE_URL=http://payment-service:8084
       - NOTIFICATION_SERVICE_URL=http://notification-service:8086
