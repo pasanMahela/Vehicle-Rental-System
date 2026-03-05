@@ -1,11 +1,15 @@
 package com.vehiclerental.maintenance_service.controller;
 
+import com.vehiclerental.maintenance_service.config.RoleAccessConfig;
 import com.vehiclerental.maintenance_service.dto.UpdateMaintenanceStatusRequest;
 import com.vehiclerental.maintenance_service.dto.CompleteMaintenanceRequest;
 import com.vehiclerental.maintenance_service.dto.ScheduleFromIssueRequest;
+import com.vehiclerental.maintenance_service.exception.AccessDeniedException;
 import com.vehiclerental.maintenance_service.model.MaintenanceRecord;
 import com.vehiclerental.maintenance_service.model.ReportedIssue;
 import com.vehiclerental.maintenance_service.service.MaintenanceService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,17 +21,25 @@ import java.util.List;
 @CrossOrigin
 public class MaintenanceController {
 
+    private static final Logger logger = LoggerFactory.getLogger(MaintenanceController.class);
+    
     private final MaintenanceService service;
+    private final RoleAccessConfig accessConfig;
 
-    public MaintenanceController(MaintenanceService service) {
+    public MaintenanceController(MaintenanceService service, RoleAccessConfig accessConfig) {
         this.service = service;
+        this.accessConfig = accessConfig;
     }
 
     // ========== Issue Reporting Endpoints ==========
     
     @PostMapping("/issues/report")
-    public ReportedIssue reportIssue(@RequestBody ReportedIssue issue) {
-        return service.reportIssue(issue);
+    public ReportedIssue reportIssue(@RequestBody ReportedIssue issue,
+                                      @RequestHeader(value = "X-User-Id", required = false) String userId,
+                                      @RequestHeader(value = "X-User-Role", required = false) String role,
+                                      @RequestHeader(value = "X-Username", required = false) String username) {
+        validateRole(role, accessConfig.getIssueReportRoles(), "Issue reporting");
+        return service.reportIssue(issue, userId, role, username);
     }
 
     @GetMapping("/issues/vehicle/{vehicleId}")
@@ -45,14 +57,18 @@ public class MaintenanceController {
     @PostMapping("/schedule-from-issue/{issueId}")
     public MaintenanceRecord scheduleFromIssue(
             @PathVariable String issueId,
-            @RequestBody ScheduleFromIssueRequest request) {
+            @RequestBody ScheduleFromIssueRequest request,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        validateRole(role, accessConfig.getMaintenanceScheduleRoles(), "Schedule maintenance");
         return service.scheduleMaintenanceFromIssue(issueId, request.getScheduledDate(), request.getEstimatedCost());
     }
 
     // ========== Scheduled/Recurring Maintenance ==========
     
     @PostMapping("/scheduled")
-    public MaintenanceRecord createScheduledMaintenance(@RequestBody MaintenanceRecord record) {
+    public MaintenanceRecord createScheduledMaintenance(@RequestBody MaintenanceRecord record,
+                                                         @RequestHeader(value = "X-User-Role", required = false) String role) {
+        validateRole(role, accessConfig.getMaintenanceScheduleRoles(), "Schedule maintenance");
         return service.createScheduledMaintenance(record);
     }
 
@@ -69,21 +85,28 @@ public class MaintenanceController {
     // ========== Maintenance Operations ==========
     
     @PutMapping("/{id}/start")
-    public MaintenanceRecord startMaintenance(@PathVariable String id) {
+    public MaintenanceRecord startMaintenance(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        validateRole(role, accessConfig.getMaintenanceManageRoles(), "Start maintenance");
         return service.startMaintenance(id);
     }
 
     @PutMapping("/{id}/complete")
     public MaintenanceRecord completeMaintenance(
             @PathVariable String id,
-            @RequestBody CompleteMaintenanceRequest request) {
+            @RequestBody CompleteMaintenanceRequest request,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        validateRole(role, accessConfig.getMaintenanceManageRoles(), "Complete maintenance");
         return service.completeMaintenance(id, request.getActualCost());
     }
 
     @PutMapping("/{id}/status")
     public MaintenanceRecord updateStatus(
             @PathVariable String id,
-            @RequestBody UpdateMaintenanceStatusRequest request) {
+            @RequestBody UpdateMaintenanceStatusRequest request,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        validateRole(role, accessConfig.getMaintenanceManageRoles(), "Update maintenance status");
         return service.updateMaintenanceStatus(id, request.getStatus());
     }
 
@@ -107,7 +130,9 @@ public class MaintenanceController {
     // ========== Admin/Utility Endpoints ==========
     
     @PostMapping("/generate-recurring")
-    public String generateRecurringMaintenance() {
+    public String generateRecurringMaintenance(
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        validateRole(role, accessConfig.getMaintenanceManageRoles(), "Generate recurring maintenance");
         service.generateRecurringMaintenance();
         return "Recurring maintenance records generated successfully";
     }
@@ -115,14 +140,38 @@ public class MaintenanceController {
     // ========== Delete Endpoints ==========
     
     @DeleteMapping("/records/{id}")
-    public String deleteMaintenanceRecord(@PathVariable String id) {
+    public String deleteMaintenanceRecord(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        validateRole(role, accessConfig.getMaintenanceManageRoles(), "Delete maintenance record");
         service.deleteMaintenanceRecord(id);
         return "Maintenance record deleted successfully";
     }
 
     @DeleteMapping("/issues/{id}")
-    public String deleteIssue(@PathVariable String id) {
+    public String deleteIssue(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        validateRole(role, accessConfig.getMaintenanceManageRoles(), "Delete issue");
         service.deleteIssue(id);
         return "Issue deleted successfully";
+    }
+
+    private void validateRole(String userRole, List<String> allowedRoles, String operation) {
+        logger.info("Validating role for operation: {} | Received role: {} | Allowed roles: {}", 
+                    operation, userRole, allowedRoles);
+        
+        if (userRole == null || userRole.trim().isEmpty()) {
+            logger.warn("Access denied - No role provided for operation: {}", operation);
+            throw new AccessDeniedException("Access denied: User role is required for " + operation);
+        }
+        if (!allowedRoles.contains(userRole)) {
+            logger.warn("Access denied - Role {} not in allowed roles {} for operation: {}", 
+                        userRole, allowedRoles, operation);
+            throw new AccessDeniedException("Access denied: " + operation + " requires one of " + 
+                                           allowedRoles + ", but got " + userRole);
+        }
+        
+        logger.info("Role validation passed for operation: {}", operation);
     }
 }

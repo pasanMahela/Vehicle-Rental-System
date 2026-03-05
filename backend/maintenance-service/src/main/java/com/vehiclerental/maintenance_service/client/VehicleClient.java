@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.Map;
 
@@ -19,6 +20,24 @@ public class VehicleClient {
                 .build();
     }
 
+    public boolean vehicleExists(String vehicleId) {
+        try {
+            webClient.get()
+                    .uri("/api/vehicles/{id}", vehicleId)
+                    .retrieve()
+                    .toEntity(Object.class)
+                    .block();
+            log.info("Vehicle {} exists", vehicleId);
+            return true;
+        } catch (WebClientResponseException.NotFound e) {
+            log.warn("Vehicle {} not found (404)", vehicleId);
+            return false;
+        } catch (Exception e) {
+            log.error("Error checking vehicle existence for {}: {}", vehicleId, e.getMessage(), e);
+            return false;
+        }
+    }
+
     public void updateVehicleStatus(String vehicleId, String status) {
         try {
             webClient.put()
@@ -30,6 +49,7 @@ public class VehicleClient {
             log.info("Vehicle {} status updated to {}", vehicleId, status);
         } catch (Exception e) {
             log.error("Failed to update vehicle status: {} - {}", vehicleId, e.getMessage());
+            throw new RuntimeException("Failed to update vehicle status for vehicle " + vehicleId, e);
         }
     }
 }

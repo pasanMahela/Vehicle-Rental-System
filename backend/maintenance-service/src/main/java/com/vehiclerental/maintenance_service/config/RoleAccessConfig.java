@@ -15,9 +15,19 @@ import java.util.List;
 public class RoleAccessConfig {
 
     private String maintenanceManage;
+    private String issueReport;
+    private String maintenanceSchedule;
 
     public List<String> getMaintenanceManageRoles() {
         return parseRoles(maintenanceManage);
+    }
+
+    public List<String> getIssueReportRoles() {
+        return parseRoles(issueReport);
+    }
+
+    public List<String> getMaintenanceScheduleRoles() {
+        return parseRoles(maintenanceSchedule);
     }
 
     private List<String> parseRoles(String roles) {

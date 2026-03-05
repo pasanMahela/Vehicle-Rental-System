@@ -15,6 +15,7 @@ public class ReportedIssue {
     private String description;
     private LocalDateTime reportedDate;
     private String reportedBy;
+    private String reportedByEmail;
     private String status;
     private String maintenanceRecordId;
 }

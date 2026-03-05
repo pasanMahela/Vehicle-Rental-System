@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface MaintenanceService {
     // Issue reporting
-    ReportedIssue reportIssue(ReportedIssue issue);
+    ReportedIssue reportIssue(ReportedIssue issue, String userId, String role, String username);
     List<ReportedIssue> getVehicleIssues(String vehicleId);
     ReportedIssue getIssueById(String issueId);
     

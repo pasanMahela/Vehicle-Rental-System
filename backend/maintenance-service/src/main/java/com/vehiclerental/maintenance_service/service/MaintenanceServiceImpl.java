@@ -1,9 +1,13 @@
 package com.vehiclerental.maintenance_service.service;
 
+import com.vehiclerental.maintenance_service.client.AuthClient;
+import com.vehiclerental.maintenance_service.client.NotificationClient;
+import com.vehiclerental.maintenance_service.client.VehicleClient;
 import com.vehiclerental.maintenance_service.model.MaintenanceRecord;
 import com.vehiclerental.maintenance_service.model.ReportedIssue;
 import com.vehiclerental.maintenance_service.repository.MaintenanceRepository;
 import com.vehiclerental.maintenance_service.repository.ReportedIssueRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,22 +16,70 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Slf4j
 public class MaintenanceServiceImpl implements MaintenanceService {
 
     private final MaintenanceRepository maintenanceRepository;
     private final ReportedIssueRepository issueRepository;
+    private final VehicleClient vehicleClient;
+    private final NotificationClient notificationClient;
+    private final AuthClient authClient;
 
     public MaintenanceServiceImpl(MaintenanceRepository maintenanceRepository, 
-                                 ReportedIssueRepository issueRepository) {
+                                 ReportedIssueRepository issueRepository,
+                                 VehicleClient vehicleClient,
+                                 NotificationClient notificationClient,
+                                 AuthClient authClient) {
         this.maintenanceRepository = maintenanceRepository;
         this.issueRepository = issueRepository;
+        this.vehicleClient = vehicleClient;
+        this.notificationClient = notificationClient;
+        this.authClient = authClient;
     }
 
     @Override
-    public ReportedIssue reportIssue(ReportedIssue issue) {
+    public ReportedIssue reportIssue(ReportedIssue issue, String userId, String role, String username) {
+        // Validate vehicle exists
+        if (!vehicleClient.vehicleExists(issue.getVehicleId())) {
+            throw new RuntimeException("Vehicle not found with id: " + issue.getVehicleId());
+        }
+
+        // Get user email from auth service
+        String userEmail = null;
+        if (userId != null) {
+            AuthClient.UserInfo userInfo = authClient.getUserById(userId);
+            if (userInfo != null) {
+                userEmail = userInfo.getEmail();
+            }
+        }
+
+        // Set issue details
         issue.setReportedDate(LocalDateTime.now());
         issue.setStatus("REPORTED");
-        return issueRepository.save(issue);
+        issue.setReportedBy(username != null ? username : userId);
+        issue.setReportedByEmail(userEmail);
+        
+        ReportedIssue savedIssue = issueRepository.save(issue);
+
+        // Send email notification to the user who reported the issue
+        if (userEmail != null && userId != null) {
+            String message = String.format(
+                "Your issue report for vehicle %s has been successfully submitted. " +
+                "Issue Type: %s. Description: %s. Our team will review it shortly.",
+                issue.getVehicleId(),
+                issue.getIssueType(),
+                issue.getDescription()
+            );
+            
+            try {
+                notificationClient.sendNotification(userId, userEmail, message, "ISSUE_REPORTED");
+                log.info("Notification sent to user {} about issue report {}", userId, savedIssue.getId());
+            } catch (Exception e) {
+                log.error("Failed to send notification for issue report: {}", e.getMessage());
+            }
+        }
+
+        return savedIssue;
     }
 
     @Override
@@ -58,6 +110,8 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         record.setCreatedAt(LocalDateTime.now());
         
         MaintenanceRecord savedRecord = maintenanceRepository.save(record);
+
+        vehicleClient.updateVehicleStatus(savedRecord.getVehicleId(), "MAINTENANCE");
         
         issue.setMaintenanceRecordId(savedRecord.getId());
         issue.setStatus("SCHEDULED");
@@ -88,7 +142,9 @@ public class MaintenanceServiceImpl implements MaintenanceService {
             record.setNextDueDate(nextDue);
         }
         
-        return maintenanceRepository.save(record);
+        MaintenanceRecord savedRecord = maintenanceRepository.save(record);
+        vehicleClient.updateVehicleStatus(savedRecord.getVehicleId(), "MAINTENANCE");
+        return savedRecord;
     }
 
     @Override
@@ -215,6 +271,7 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         nextRecord.setScheduledDate(nextDue.atStartOfDay());
         nextRecord.setCreatedAt(LocalDateTime.now());
         
-        maintenanceRepository.save(nextRecord);
+        MaintenanceRecord savedRecord = maintenanceRepository.save(nextRecord);
+        vehicleClient.updateVehicleStatus(savedRecord.getVehicleId(), "MAINTENANCE");
     }
 }
