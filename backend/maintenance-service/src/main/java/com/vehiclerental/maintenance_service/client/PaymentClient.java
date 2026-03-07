@@ -2,6 +2,7 @@ package com.vehiclerental.maintenance_service.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -12,11 +13,14 @@ import java.util.Map;
 public class PaymentClient {
 
     private final WebClient webClient;
+    private final RequestAuthHeaderProvider authHeaderProvider;
 
-    public PaymentClient(@Value("${payment.service.url}") String paymentServiceUrl) {
+    public PaymentClient(@Value("${payment.service.url}") String paymentServiceUrl,
+                         RequestAuthHeaderProvider authHeaderProvider) {
         this.webClient = WebClient.builder()
                 .baseUrl(paymentServiceUrl)
                 .build();
+        this.authHeaderProvider = authHeaderProvider;
     }
 
     @SuppressWarnings("unchecked")
@@ -30,8 +34,16 @@ public class PaymentClient {
                     "paymentType", "DAMAGE",
                     "customerEmail", customerEmail != null ? customerEmail : ""
             );
+
+            String authorization = authHeaderProvider.getAuthorizationHeader();
+
             return webClient.post()
                     .uri("/api/payments")
+                    .headers(headers -> {
+                        if (authorization != null && !authorization.isBlank()) {
+                            headers.set(HttpHeaders.AUTHORIZATION, authorization);
+                        }
+                    })
                     .bodyValue(paymentRequest)
                     .retrieve()
                     .bodyToMono(Map.class)
