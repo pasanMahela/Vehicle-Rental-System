@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.security.access.AccessDeniedException;
 
 @RestController
 @RequestMapping("/api/vehicles")
@@ -69,6 +70,11 @@ public class VehicleController {
         return ResponseEntity.ok(vehicleService.getDistinctTypes());
     }
 
+    @GetMapping("/ranked")
+    public ResponseEntity<List<Vehicle>> getRankedVehicles() {
+        return ResponseEntity.ok(vehicleService.getVehiclesRanked());
+    }
+
     @PutMapping("/{id}/status")
     public ResponseEntity<Vehicle> updateVehicleStatus(@PathVariable String id,
                                                        @RequestBody Map<String, String> body,
@@ -78,9 +84,11 @@ public class VehicleController {
     }
 
     private void validateRole(String userRole, List<String> allowedRoles, String operation) {
-        if (userRole == null) return;
+        if (userRole == null || userRole.isBlank()) {
+            throw new AccessDeniedException("Access denied: " + operation + " requires authentication");
+        }
         if (!allowedRoles.contains(userRole)) {
-            throw new RuntimeException("Access denied: " + operation + " requires one of " + allowedRoles);
+            throw new AccessDeniedException("Access denied: " + operation + " requires one of " + allowedRoles);
         }
     }
 }

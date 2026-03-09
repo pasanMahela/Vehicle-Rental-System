@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -134,5 +135,12 @@ public class BookingService {
 
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
+    }
+
+    public Map<String, Long> getBookingCountsByVehicle() {
+        return bookingRepository.findAll().stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.CONFIRMED
+                        || b.getStatus() == Booking.BookingStatus.COMPLETED)
+                .collect(Collectors.groupingBy(Booking::getVehicleId, Collectors.counting()));
     }
 }

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
@@ -25,6 +26,12 @@ public class Vehicle {
     private double advanceDeposit;
 
     private AvailabilityStatus availabilityStatus;
+
+    @Transient
+    private int bookingCount;
+
+    @Transient
+    private int popularityRank;
 
     public enum AvailabilityStatus {
         AVAILABLE, BOOKED, MAINTENANCE
