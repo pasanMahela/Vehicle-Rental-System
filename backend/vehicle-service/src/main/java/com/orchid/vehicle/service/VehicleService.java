@@ -1,12 +1,15 @@
 package com.orchid.vehicle.service;
 
+import com.orchid.vehicle.client.BookingClient;
 import com.orchid.vehicle.dto.VehicleDTO;
 import com.orchid.vehicle.model.Vehicle;
 import com.orchid.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -14,9 +17,11 @@ import java.util.stream.Collectors;
 public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
+    private final BookingClient bookingClient;
 
     public Vehicle addVehicle(VehicleDTO dto) {
         Vehicle vehicle = new Vehicle();
+        vehicle.setVehicleId(dto.getVehicleId());
         vehicle.setBrand(dto.getBrand());
         vehicle.setModel(dto.getModel());
         vehicle.setType(dto.getType());
@@ -81,5 +86,25 @@ public class VehicleService {
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
+    }
+
+    public List<Vehicle> getVehiclesRanked() {
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+        Map<String, Long> counts = bookingClient.getBookingCountsByVehicle();
+
+        vehicles.forEach(v -> v.setBookingCount(
+                counts.getOrDefault(v.getVehicleId(), 0L).intValue()));
+
+        vehicles.sort(Comparator.comparingInt(Vehicle::getBookingCount).reversed());
+
+        int rank = 1;
+        for (int i = 0; i < vehicles.size(); i++) {
+            if (i > 0 && vehicles.get(i).getBookingCount() < vehicles.get(i - 1).getBookingCount()) {
+                rank = i + 1;
+            }
+            vehicles.get(i).setPopularityRank(rank);
+        }
+
+        return vehicles;
     }
 }

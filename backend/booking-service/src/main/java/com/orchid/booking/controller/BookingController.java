@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -80,6 +81,11 @@ public class BookingController {
         Booking booking = bookingService.getBookingById(id);
         validateViewAccess(booking.getCustomerId(), userId, role);
         return ResponseEntity.ok(booking);
+    }
+
+    @GetMapping("/vehicle-counts")
+    public ResponseEntity<Map<String, Long>> getBookingCountsByVehicle() {
+        return ResponseEntity.ok(bookingService.getBookingCountsByVehicle());
     }
 
     @GetMapping("/customer/{customerId}")
