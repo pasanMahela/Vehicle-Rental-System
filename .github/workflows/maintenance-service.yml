@@ -96,8 +96,10 @@ jobs:
 
       - name: Check if SonarCloud token exists
         id: check-sonar-token
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          if [ -z "${{ secrets.SONAR_TOKEN }}" ]; then
+          if [ -z "$SONAR_TOKEN" ]; then
             echo "SONAR_TOKEN is not set, skipping SonarCloud analysis"
             echo "skip=true" >> $GITHUB_OUTPUT
           else
@@ -145,8 +147,10 @@ jobs:
 
       - name: Check if Snyk token exists
         id: check-snyk-token
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
-          if [ -z "${{ secrets.SNYK_TOKEN }}" ]; then
+          if [ -z "$SNYK_TOKEN" ]; then
             echo "SNYK_TOKEN is not set, skipping Snyk security scan"
             echo "skip=true" >> $GITHUB_OUTPUT
           else
@@ -181,8 +185,11 @@ jobs:
     steps:
       - name: Check if Docker credentials exist
         id: check-docker-creds
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          if [ -z "${{ secrets.DOCKER_USERNAME }}" ] || [ -z "${{ secrets.DOCKER_PASSWORD }}" ]; then
+          if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ]; then
             echo "Docker credentials not set, skipping Docker build"
             echo "skip=true" >> $GITHUB_OUTPUT
           else
@@ -247,8 +254,12 @@ jobs:
     steps:
       - name: Check if Azure credentials exist
         id: check-azure-creds
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+          ACR_NAME: ${{ secrets.ACR_NAME }}
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
         run: |
-          if [ -z "${{ secrets.AZURE_CREDENTIALS }}" ] || [ -z "${{ secrets.ACR_NAME }}" ] || [ -z "${{ secrets.AZURE_RESOURCE_GROUP }}" ]; then
+          if [ -z "$AZURE_CREDENTIALS" ] || [ -z "$ACR_NAME" ] || [ -z "$AZURE_RESOURCE_GROUP" ]; then
             echo "Azure credentials not set, skipping deployment"
             echo "skip=true" >> $GITHUB_OUTPUT
           else
