@@ -175,16 +175,23 @@ jobs:
     
     steps:
       - name: Update Container App image
+        env:
+          ACR_USER: ${{ secrets.ACR_USERNAME }}
+          ACR_PASS: ${{ secrets.ACR_PASSWORD }}
+          TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          ACR_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           az login --service-principal \
-            -u ${{ secrets.ACR_USERNAME }} \
-            -p ${{ secrets.ACR_PASSWORD }} \
-            --tenant ${{ secrets.AZURE_TENANT_ID }} || true
+            -u "$ACR_USER" \
+            -p "$ACR_PASS" \
+            --tenant "$TENANT_ID" || true
           
           # Update the container app with new image
           az containerapp update \
             --name payment-service \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --image ${{ secrets.ACR_LOGIN_SERVER }}/payment-service:${{ github.sha }} \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$ACR_SERVER/payment-service:$COMMIT_SHA" \
             2>/dev/null || echo "Auto-deploy skipped - manual deploy available"
         continue-on-error: true
