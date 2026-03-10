@@ -45,13 +45,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions@v3
+        uses: snyk/actions/maven@master
         with:
           command: test
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       - name: Snyk SARIF report
-        uses: snyk/actions@v3
+        uses: snyk/actions/maven@master
         with:
           command: test --sarif-file-output=snyk.sarif
         env:
