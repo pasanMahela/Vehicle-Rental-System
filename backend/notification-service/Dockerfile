@@ -1,19 +1,10 @@
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM eclipse-temurin:21-jre-alpine
+RUN addgroup -S spring && adduser -S spring -G spring
 WORKDIR /app
-COPY pom.xml ./pom.xml
-COPY api-gateway/pom.xml ./api-gateway/pom.xml
-COPY auth-service/pom.xml ./auth-service/pom.xml
-COPY vehicle-service/pom.xml ./vehicle-service/pom.xml
-COPY booking-service/pom.xml ./booking-service/pom.xml
-COPY payment-service/pom.xml ./payment-service/pom.xml
-COPY maintenance-service/pom.xml ./maintenance-service/pom.xml
-COPY notification-service/pom.xml ./notification-service/pom.xml
-RUN mvn dependency:go-offline -pl notification-service -am -B || true
-COPY notification-service/src ./notification-service/src
-RUN mvn package -pl notification-service -am -DskipTests -B
-
-FROM eclipse-temurin:21-jre
-WORKDIR /app
-COPY --from=build /app/notification-service/target/*.jar app.jar
+COPY target/notification-service-1.0.0.jar app.jar
+RUN chown -R spring:spring /app
+USER spring:spring
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:8086/actuator/health || exit 1
 EXPOSE 8086
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
