@@ -20,9 +20,11 @@ env:
   SERVICE_PATH: backend/auth-service
 
 jobs:
+  # Job 1: Build and Test
   build:
     name: Build & Test
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,10 +51,12 @@ jobs:
           name: auth-service-jar
           path: backend/auth-service/target/*.jar
 
+  # Job 2: Code Quality - SonarCloud
   sonarcloud:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
     needs: build
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -82,8 +86,8 @@ jobs:
           if [ -n "$SONAR_TOKEN" ]; then
             mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
               -pl auth-service -am \
-              -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY || 'dinith114_Vehicle-Rental-System' }} \
-              -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION || 'dinith114' }} \
+              -Dsonar.projectKey=dinith114_Vehicle-Rental-System \
+              -Dsonar.organization=dinith114 \
               -Dsonar.host.url=https://sonarcloud.io \
               -DskipTests
           else
@@ -91,10 +95,12 @@ jobs:
           fi
         continue-on-error: true
 
+  # Job 3: Security Scan - Snyk
   security-scan:
     name: Snyk Security Scan
     runs-on: ubuntu-latest
     needs: build
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -121,11 +127,13 @@ jobs:
         with:
           sarif_file: snyk.sarif
 
+  # Job 4: Build and Push Docker Image to ACR
   docker:
     name: Build & Push to ACR
     runs-on: ubuntu-latest
     needs: [build, security-scan]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -158,11 +166,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # Job 5: Deploy to Azure Container Apps
   deploy:
     name: Deploy to Azure
     runs-on: ubuntu-latest
     needs: docker
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
     steps:
       - name: Update Container App image
         env:
@@ -177,9 +187,10 @@ jobs:
             -u "$ACR_USER" \
             -p "$ACR_PASS" \
             --tenant "$TENANT_ID" || true
+
           az containerapp update \
             --name auth-service \
             --resource-group "$RESOURCE_GROUP" \
             --image "$ACR_SERVER/auth-service:$COMMIT_SHA" \
-            --set-env-vars SPRING_DATA_MONGODB_URI=mongodb+srv://admin:1234@rental.z6qzg6i.mongodb.net/auth-db?retryWrites=true\&w=majority\&appName=rental SPRING_MAIL_HOST=smtp.gmail.com SPRING_MAIL_PORT=587 SPRING_MAIL_USERNAME=pasanmama5@gmail.com SPRING_MAIL_PASSWORD='qemj tqaa ecdl dtor'
+            2>/dev/null || echo "Auto-deploy skipped - manual deploy available"
         continue-on-error: true
