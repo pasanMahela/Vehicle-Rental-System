@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   mongodb:
     image: mongo:7.0
@@ -94,8 +96,10 @@ services:
       - "8084:8084"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb+srv://admin:1234@rental.z6qzg6i.mongodb.net/payment-db?retryWrites=true&w=majority&appName=rental
-      - BOOKING_SERVICE_URL=http://api-gateway:8080
-      - NOTIFICATION_SERVICE_URL=http://api-gateway:8080
+      - BOOKING_SERVICE_URL=${API_GATEWAY_URL}
+      - NOTIFICATION_SERVICE_URL=${API_GATEWAY_URL}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
     dns:
       - 8.8.8.8
       - 8.8.4.4
