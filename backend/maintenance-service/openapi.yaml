@@ -1,0 +1,463 @@
+openapi: 3.0.3
+info:
+  title: Maintenance Service API
+  description: |
+    Maintenance microservice for Orchid Vehicle Rental System.
+    
+    ## Features
+    - Issue reporting and tracking
+    - Maintenance schedule management
+    - Vehicle maintenance history
+    - Email notifications for issue reports
+    - Role-based access control
+    
+    ## Authentication
+    Uses header-based role authentication:
+    - `X-User-Role`: User role (CUSTOMER, REPAIR_ADVISOR, OWNER)
+    - `X-User-Id`: User identifier
+    - `X-Username`: Username of the user
+    - `Authorization`: JWT Bearer token
+    
+    ## Inter-service Communication
+    - **Vehicle Service**: Validates vehicle existence and updates status
+    - **Auth Service**: Retrieves user information and email
+    - **Notification Service**: Sends email notifications for reported issues
+    - **Payment Service**: Processes damage payments
+    
+  version: 1.0.0
+  contact:
+    name: Orchid Vehicle Rental Team
+    email: support@orchid-rental.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8085
+    description: Local Development Server
+  - url: http://api-gateway:8080
+    description: API Gateway (Via Gateway)
+  - url: https://maintenance-service.azurecontainerapps.io
+    description: Production Server (Azure Container Apps)
+
+tags:
+  - name: Issue Reporting
+    description: Report and manage vehicle issues
+  - name: Maintenance Scheduling
+    description: Schedule and manage maintenance operations
+  - name: Maintenance Records
+    description: View maintenance history and records
+
+paths:
+  /api/maintenance/issues/report:
+    post:
+      tags:
+        - Issue Reporting
+      summary: Report a vehicle issue
+      description: |
+        Creates a new maintenance issue report for a vehicle.
+        Only CUSTOMER and REPAIR_ADVISOR roles can report issues.
+        Email notification is automatically sent to the user.
+      parameters:
+        - $ref: '#/components/parameters/XUserRole'
+        - $ref: '#/components/parameters/XUserId'
+        - $ref: '#/components/parameters/XUsername'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportedIssue'
+      responses:
+        '200':
+          description: Issue reported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportedIssue'
+        '400':
+          description: Invalid input or vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied - insufficient permissions
+
+  /api/maintenance/issues/vehicle/{vehicleId}:
+    get:
+      tags:
+        - Issue Reporting
+      summary: Get issues for a vehicle
+      description: Retrieves all maintenance issues reported for a specific vehicle.
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Vehicle ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: List of issues for the vehicle
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportedIssue'
+        '404':
+          description: Vehicle not found
+
+  /api/maintenance/issues/{issueId}:
+    get:
+      tags:
+        - Issue Reporting
+      summary: Get issue details
+      description: Retrieves detailed information about a specific maintenance issue.
+      parameters:
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Issue ID (MongoDB ObjectId)
+      responses:
+        '200':
+          description: Issue details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportedIssue'
+        '404':
+          description: Issue not found
+
+  /api/maintenance/schedule-from-issue/{issueId}:
+    post:
+      tags:
+        - Maintenance Scheduling
+      summary: Schedule maintenance from issue
+      description: |
+        Creates a maintenance record from a reported issue.
+        Only REPAIR_ADVISOR role can schedule maintenance.
+      parameters:
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Issue ID
+        - $ref: '#/components/parameters/XUserRole'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleFromIssueRequest'
+      responses:
+        '200':
+          description: Maintenance scheduled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceRecord'
+        '404':
+          description: Issue not found
+        '403':
+          description: Access denied - only REPAIR_ADVISOR can schedule
+
+  /api/maintenance/scheduled:
+    post:
+      tags:
+        - Maintenance Scheduling
+      summary: Create scheduled maintenance
+      description: |
+        Creates a new scheduled maintenance record directly.
+        Only REPAIR_ADVISOR role can create maintenance schedules.
+      parameters:
+        - $ref: '#/components/parameters/XUserRole'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceRecord'
+      responses:
+        '201':
+          description: Maintenance scheduled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceRecord'
+        '400':
+          description: Invalid input
+        '403':
+          description: Access denied
+
+  /api/maintenance/upcoming/vehicle/{vehicleId}:
+    get:
+      tags:
+        - Maintenance Scheduling
+      summary: Get upcoming maintenance for vehicle
+      description: Retrieves scheduled maintenance operations for a specific vehicle.
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Vehicle ID
+      responses:
+        '200':
+          description: List of upcoming maintenance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaintenanceRecord'
+
+  /api/maintenance/records/{recordId}:
+    get:
+      tags:
+        - Maintenance Records
+      summary: Get maintenance record
+      description: Retrieves details of a specific maintenance record.
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Maintenance Record ID
+      responses:
+        '200':
+          description: Maintenance record details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceRecord'
+        '404':
+          description: Maintenance record not found
+
+    put:
+      tags:
+        - Maintenance Records
+      summary: Update maintenance record status
+      description: |
+        Updates the status of a maintenance record.
+        Only REPAIR_ADVISOR role can update maintenance status.
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/XUserRole'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMaintenanceStatusRequest'
+      responses:
+        '200':
+          description: Maintenance record updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceRecord'
+        '404':
+          description: Record not found
+        '403':
+          description: Access denied
+
+components:
+  parameters:
+    XUserRole:
+      name: X-User-Role
+      in: header
+      required: false
+      schema:
+        type: string
+        enum: [CUSTOMER, REPAIR_ADVISOR, OWNER]
+      description: User role for authorization
+
+    XUserId:
+      name: X-User-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: User identifier (MongoDB ObjectId)
+
+    XUsername:
+      name: X-Username
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Username of the authenticated user
+
+  schemas:
+    ReportedIssue:
+      type: object
+      description: Vehicle issue report
+      required:
+        - vehicleId
+        - description
+        - issueType
+      properties:
+        id:
+          type: string
+          description: Issue ID (MongoDB ObjectId)
+          readOnly: true
+        vehicleId:
+          type: string
+          description: Vehicle ID (MongoDB ObjectId)
+        issueType:
+          type: string
+          description: Type of issue (e.g., Engine Problem, Brake Issue, Suspension)
+          example: "Engine Problem"
+        description:
+          type: string
+          description: Detailed description of the issue
+          example: "Engine noise on startup"
+        reportedDate:
+          type: string
+          format: date-time
+          description: Date and time when issue was reported
+          readOnly: true
+        reportedBy:
+          type: string
+          description: User ID of the person who reported the issue
+          readOnly: true
+        reportedByEmail:
+          type: string
+          format: email
+          description: Email address of the person who reported the issue
+          readOnly: true
+        status:
+          type: string
+          enum: [REPORTED, UNDER_REVIEW, SCHEDULED, RESOLVED]
+          description: Current status of the issue
+          default: REPORTED
+        maintenanceRecordId:
+          type: string
+          description: Associated maintenance record ID if scheduled
+          nullable: true
+
+    MaintenanceRecord:
+      type: object
+      description: Maintenance operation record
+      required:
+        - vehicleId
+        - maintenanceType
+        - scheduledDate
+      properties:
+        id:
+          type: string
+          description: Maintenance record ID
+          readOnly: true
+        vehicleId:
+          type: string
+          description: Vehicle ID
+        maintenanceType:
+          type: string
+          description: Type of maintenance
+          enum: [ROUTINE, REPAIR, INSPECTION, PREVENTIVE]
+        description:
+          type: string
+          description: Detailed maintenance description
+          nullable: true
+        scheduledDate:
+          type: string
+          format: date-time
+          description: Scheduled date for maintenance
+        completedDate:
+          type: string
+          format: date-time
+          description: Actual completion date
+          nullable: true
+        estimatedCost:
+          type: number
+          format: decimal
+          description: Estimated cost for maintenance
+          nullable: true
+        actualCost:
+          type: number
+          format: decimal
+          description: Actual cost after completion
+          nullable: true
+        status:
+          type: string
+          enum: [SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED]
+          description: Current status
+          default: SCHEDULED
+        technician:
+          type: string
+          description: Assigned technician
+          nullable: true
+        notes:
+          type: string
+          description: Additional notes
+          nullable: true
+
+    ScheduleFromIssueRequest:
+      type: object
+      description: Request to schedule maintenance from an issue
+      required:
+        - scheduledDate
+      properties:
+        scheduledDate:
+          type: string
+          format: date-time
+          description: When the maintenance should be scheduled
+        estimatedCost:
+          type: number
+          format: decimal
+          description: Estimated cost for the maintenance
+          nullable: true
+
+    UpdateMaintenanceStatusRequest:
+      type: object
+      description: Request to update maintenance status
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [IN_PROGRESS, COMPLETED, CANCELLED]
+          description: New status for the maintenance record
+        completedDate:
+          type: string
+          format: date-time
+          description: Completion date (required if status is COMPLETED)
+          nullable: true
+        actualCost:
+          type: number
+          format: decimal
+          description: Actual cost (optional)
+          nullable: true
+        notes:
+          type: string
+          description: Additional notes
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      description: Error response
+      properties:
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Error message
+        status:
+          type: integer
+          description: HTTP status code
+        timestamp:
+          type: string
+          format: date-time
+          description: When the error occurred

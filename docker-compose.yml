@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mongodb:
     image: mongo:7.0
@@ -60,13 +58,12 @@ services:
       - "8082:8082"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb+srv://dinith114:dinith114@cluster0.jaljain.mongodb.net/vehicle-db?retryWrites=true&w=majority&appName=Cluster0
-      - BOOKING_SERVICE_URL=http://booking-service:8083
+      - BOOKING_SERVICE_URL=http://api-gateway:8080
     dns:
       - 8.8.8.8
       - 1.1.1.1
     depends_on:
       - mongodb
-      - booking-service
     networks:
       - orchid-network
 
@@ -79,13 +76,12 @@ services:
       - "8083:8083"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/booking-db
-      - VEHICLE_SERVICE_URL=http://vehicle-service:8082
-      - PAYMENT_SERVICE_URL=http://payment-service:8084
-      - NOTIFICATION_SERVICE_URL=http://notification-service:8086
-      - MAINTENANCE_SERVICE_URL=http://maintenance-service:8085
+      - VEHICLE_SERVICE_URL=http://api-gateway:8080
+      - PAYMENT_SERVICE_URL=http://api-gateway:8080
+      - NOTIFICATION_SERVICE_URL=http://api-gateway:8080
+      - MAINTENANCE_SERVICE_URL=http://api-gateway:8080
     depends_on:
       - mongodb
-      - vehicle-service
     networks:
       - orchid-network
 
