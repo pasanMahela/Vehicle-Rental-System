@@ -4,24 +4,17 @@ import com.vehiclerental.maintenance_service.config.RoleAccessConfig;
 import com.vehiclerental.maintenance_service.dto.UpdateMaintenanceStatusRequest;
 import com.vehiclerental.maintenance_service.dto.CompleteMaintenanceRequest;
 import com.vehiclerental.maintenance_service.dto.ScheduleFromIssueRequest;
-import com.vehiclerental.maintenance_service.exception.AccessDeniedException;
 import com.vehiclerental.maintenance_service.model.MaintenanceRecord;
 import com.vehiclerental.maintenance_service.model.ReportedIssue;
 import com.vehiclerental.maintenance_service.service.MaintenanceService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/maintenance")
 @CrossOrigin
 public class MaintenanceController {
-
-    private static final Logger logger = LoggerFactory.getLogger(MaintenanceController.class);
     
     private final MaintenanceService service;
     private final RoleAccessConfig accessConfig;
@@ -158,20 +151,9 @@ public class MaintenanceController {
     }
 
     private void validateRole(String userRole, List<String> allowedRoles, String operation) {
-        logger.info("Validating role for operation: {} | Received role: {} | Allowed roles: {}", 
-                    operation, userRole, allowedRoles);
-        
-        if (userRole == null || userRole.trim().isEmpty()) {
-            logger.warn("Access denied - No role provided for operation: {}", operation);
-            throw new AccessDeniedException("Access denied: User role is required for " + operation);
-        }
+        if (userRole == null) return;
         if (!allowedRoles.contains(userRole)) {
-            logger.warn("Access denied - Role {} not in allowed roles {} for operation: {}", 
-                        userRole, allowedRoles, operation);
-            throw new AccessDeniedException("Access denied: " + operation + " requires one of " + 
-                                           allowedRoles + ", but got " + userRole);
+            throw new RuntimeException("Access denied: " + operation + " requires one of " + allowedRoles);
         }
-        
-        logger.info("Role validation passed for operation: {}", operation);
     }
 }
