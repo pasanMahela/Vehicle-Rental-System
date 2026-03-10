@@ -9,5 +9,6 @@ export const deleteVehicle = (id) => api.delete(`/api/vehicles/${id}`);
 export const updateVehicleStatus = (id, status) => api.put(`/api/vehicles/${id}/status`, { status });
 export const getDistinctBrands = () => api.get('/api/vehicles/brands');
 export const getDistinctTypes = () => api.get('/api/vehicles/types');
+export const getRankedVehicles = () => api.get('/api/vehicles/ranked');
 export const getSettings = () => api.get('/api/vehicles/settings');
 export const updateSettings = (data) => api.put('/api/vehicles/settings', data);

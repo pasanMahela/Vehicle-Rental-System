@@ -22,7 +22,7 @@ public class NotificationClient {
     public void sendNotification(String userId, String email, String message, String type) {
         try {
             webClient.post()
-                    .uri("/send")
+                    .uri("/api/notifications/send")
                     .bodyValue(Map.of(
                             "userId", userId,
                             "email", email != null ? email : "",
@@ -30,11 +30,11 @@ public class NotificationClient {
                             "notificationType", type
                     ))
                     .retrieve()
-                    .toEntity(Object.class)
+                    .bodyToMono(Object.class)
                     .block();
             log.info("Notification sent for user: {}", userId);
         } catch (Exception e) {
-            log.error("Failed to send notification for user: {} - {}", userId, e.getMessage(), e);
+            log.error("Failed to send notification for user: {} - {}", userId, e.getMessage());
         }
     }
 }

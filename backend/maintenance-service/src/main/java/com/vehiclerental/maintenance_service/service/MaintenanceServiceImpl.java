@@ -177,6 +177,15 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         
         MaintenanceRecord savedRecord = maintenanceRepository.save(record);
         
+        // Update vehicle status to AVAILABLE when maintenance is completed
+        try {
+            vehicleClient.updateVehicleStatus(record.getVehicleId(), "AVAILABLE");
+            log.info("Vehicle {} status updated to AVAILABLE after maintenance completion", record.getVehicleId());
+        } catch (Exception e) {
+            log.error("Failed to update vehicle status to AVAILABLE for vehicle {}: {}", record.getVehicleId(), e.getMessage());
+            // Don't fail the maintenance completion if vehicle status update fails
+        }
+        
         if (record.getIssueId() != null) {
             ReportedIssue issue = getIssueById(record.getIssueId());
             issue.setStatus("RESOLVED");
