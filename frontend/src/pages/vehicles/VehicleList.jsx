@@ -10,7 +10,7 @@ import {
   App,
   Card,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, TrophyOutlined } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
 import {
   getAllVehicles,
@@ -18,6 +18,7 @@ import {
   updateVehicleStatus,
   getDistinctBrands,
   getDistinctTypes,
+  getRankedVehicles,
 } from '../../api/vehicleApi';
 import VehicleForm from './VehicleForm';
 
@@ -48,12 +49,13 @@ export default function VehicleList() {
     status: undefined,
     search: '',
   });
+  const [rankedView, setRankedView] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
       const [vehiclesRes, brandsRes, typesRes] = await Promise.all([
-        getAllVehicles(),
+        rankedView ? getRankedVehicles() : getAllVehicles(),
         getDistinctBrands(),
         getDistinctTypes(),
       ]);
@@ -69,7 +71,7 @@ export default function VehicleList() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [rankedView]);
 
   const handleDelete = async (id) => {
     try {
@@ -105,7 +107,42 @@ export default function VehicleList() {
     });
   }, [vehicles, filters]);
 
+  const rankMedal = (rank) => {
+    if (rank === 1) return '🥇';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    return `#${rank}`;
+  };
+
+  const rankedColumns = rankedView
+    ? [
+        {
+          title: 'Rank',
+          dataIndex: 'popularityRank',
+          key: 'popularityRank',
+          width: 80,
+          render: (rank) => (
+            <span style={{ fontSize: rank <= 3 ? 20 : 14, fontWeight: 'bold' }}>
+              {rankMedal(rank)}
+            </span>
+          ),
+          sorter: (a, b) => (a.popularityRank ?? 0) - (b.popularityRank ?? 0),
+        },
+        {
+          title: 'Bookings',
+          dataIndex: 'bookingCount',
+          key: 'bookingCount',
+          width: 100,
+          render: (val) => (
+            <Tag color={val > 0 ? 'blue' : 'default'}>{val ?? 0}</Tag>
+          ),
+          sorter: (a, b) => (a.bookingCount ?? 0) - (b.bookingCount ?? 0),
+        },
+      ]
+    : [];
+
   const columns = [
+    ...rankedColumns,
     {
       title: 'Brand',
       dataIndex: 'brand',
@@ -196,18 +233,27 @@ export default function VehicleList() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-xl font-semibold m-0">Vehicles</h2>
-        {hasRole('OWNER') && (
+        <Space>
           <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditing(null);
-              setFormOpen(true);
-            }}
+            type={rankedView ? 'primary' : 'default'}
+            icon={<TrophyOutlined />}
+            onClick={() => setRankedView((v) => !v)}
           >
-            Add Vehicle
+            {rankedView ? 'Ranked View' : 'Show Rankings'}
           </Button>
-        )}
+          {hasRole('OWNER') && (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+            >
+              Add Vehicle
+            </Button>
+          )}
+        </Space>
       </div>
 
       <Card className="shadow-sm">
