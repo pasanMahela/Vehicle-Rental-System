@@ -113,7 +113,7 @@ jobs:
           cache: maven
 
       - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/maven@b98d498629f1c368650224d6d212bf7dfa89e4ff  # v0.4.0
+        uses: snyk/actions/maven@cdb760004ba9ea4d525f2e043745dfe85bb9077e  # 0.4.0
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
