@@ -43,12 +43,12 @@ jobs:
           mvn clean package -pl maintenance-service -am -DskipTests -B -e
         continue-on-error: false
 
-      - name: Run Unit Tests (optional)
+      - name: Run Unit and Integration Tests
         working-directory: backend
         run: |
           echo "Running tests with test profile..."
-          mvn test -pl maintenance-service -B -Dspring.profiles.active=test || echo "Tests skipped or failed - continuing build"
-        continue-on-error: true
+          mvn test -pl maintenance-service -B -Dspring.profiles.active=test
+          echo "TEST RUN SUCCESSFUL"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
