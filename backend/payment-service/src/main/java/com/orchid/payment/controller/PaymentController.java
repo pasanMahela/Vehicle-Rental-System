@@ -4,6 +4,8 @@ import com.orchid.payment.config.RoleAccessConfig;
 import com.orchid.payment.dto.PaymentDTO;
 import com.orchid.payment.model.Payment;
 import com.orchid.payment.repository.PaymentRepository;
+import com.orchid.payment.client.BookingClient;
+import com.orchid.payment.client.VehicleClient;
 import com.orchid.payment.service.PaymentService;
 import com.orchid.payment.service.StripeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +34,8 @@ public class PaymentController {
     private final RoleAccessConfig accessConfig;
     private final StripeService stripeService;
     private final PaymentRepository paymentRepository;
+    private final BookingClient bookingClient;
+    private final VehicleClient vehicleClient;
 
     @Operation(summary = "Create a new payment", description = "Creates a new payment record. Requires BOOKING_CASHIER or OWNER role.")
     @ApiResponses(value = {
@@ -150,6 +154,19 @@ public class PaymentController {
         double amount = Double.parseDouble(body.get("amount").toString());
         String bookingId = body.get("bookingId").toString();
         String customerId = body.getOrDefault("customerId", "").toString();
+
+        try {
+            Map<String, Object> booking = bookingClient.getBookingById(bookingId);
+            if (booking == null) throw new RuntimeException("Booking not found");
+            
+            String vId = (String) booking.get("vehicleId");
+            if (vId != null) {
+                Map<String, Object> vehicle = vehicleClient.getVehicleById(vId);
+                if (vehicle == null) throw new RuntimeException("Vehicle not found");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Booking validation failed: " + e.getMessage());
+        }
         String paymentType = body.getOrDefault("paymentType", "RENTAL_BALANCE").toString();
         String stage = body.getOrDefault("stage", "FINAL").toString();
         String currency = body.getOrDefault("currency", "lkr").toString();
