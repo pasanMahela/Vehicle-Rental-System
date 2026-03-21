@@ -39,6 +39,16 @@ spring:
           predicates:
             - Path=/api/maintenance/**
 
+        - id: maintenance-swagger-ui
+          uri: ${MAINTENANCE_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/swagger-ui.html,/swagger-ui/**
+
+        - id: maintenance-openapi
+          uri: ${MAINTENANCE_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/v3/api-docs,/v3/api-docs/**
+
         - id: notification-service
           uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
           predicates:
