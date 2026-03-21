@@ -28,7 +28,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             "/api/auth/login",
             "/api/auth/validate",
             "/api/auth/verify",
-            "/api/auth/resend-code"
+            "/api/auth/resend-code",
+            "/swagger-ui.html",
+            "/swagger-ui/",
+            "/swagger-ui",
+            "/v3/api-docs"
     );
 
     public JwtAuthFilter(@Value("${jwt.secret}") String secret) {
