@@ -173,21 +173,17 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Update Container App image
         env:
-          ACR_USER: ${{ secrets.ACR_USERNAME }}
-          ACR_PASS: ${{ secrets.ACR_PASSWORD }}
-          TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
           ACR_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
-          az login --service-principal \
-            -u "$ACR_USER" \
-            -p "$ACR_PASS" \
-            --tenant "$TENANT_ID"
-          
-          # Update the container app with new image
           az containerapp update \
             --name payment-service \
             --resource-group "$RESOURCE_GROUP" \

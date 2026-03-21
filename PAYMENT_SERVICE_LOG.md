@@ -17,7 +17,8 @@
 ### 2. CI/CD GitHub Actions Pipeline Fixes
 **Context:** The GitHub Actions workflow file `.github/workflows/payment-service.yml` was hiding Azure deployment issues. The command `az containerapp update` had `2>/dev/null || echo "Auto-deploy skipped..."` attached to it, alongside `continue-on-error: true`. 
 **Resolution:**
-- Completely stripped out the error suppression and `continue-on-error` command inside `payment-service.yml` so any potential deployment failures properly trigger a GitHub Actions structural crash (red flag). This allows the frontend/backend developers to accurately track whether the push was successful or needs debugging.
+- Completely stripped out the error suppression and `continue-on-error` commands outside of Snyk/Sonar steps inside `payment-service.yml` so any potential deployment failures properly trigger a GitHub Actions structural crash.
+- Upgraded the deployment architecture across the 4 core services (`api-gateway`, `auth`, `notification`, `payment`). Replaced the fundamentally broken `az login` implementation (which erroneously utilized ACR registry tokens) with the official Microsoft `azure/login@v2` action utilizing a secure, role-based `AZURE_CREDENTIALS` Service Principal token.
 
 ## 📌 Testing Conducted
 - Mapped locally via Docker networking on isolated ports.
