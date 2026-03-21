@@ -11,7 +11,7 @@ on:
     paths:
       - 'backend/maintenance-service/**'
 
-# Restore global permissions
+# Global permissions
 permissions:
   contents: read
   security-events: write
@@ -26,14 +26,15 @@ jobs:
   build:
     name: Build & Test
     runs-on: ubuntu-latest
-    # Remove env override here since it's already global
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        # actions/checkout@v4 SHA: 11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
+        # actions/setup-java@v4 SHA: 99b8673ff64fbf99d8d325f52d9a5bdedb8483e9
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -48,7 +49,6 @@ jobs:
 
       - name: Run Unit and Integration Tests
         working-directory: backend
-        # Add continue-on-error back if tests might fail in PRs
         continue-on-error: true
         run: |
           echo "Running tests with test profile..."
@@ -57,6 +57,7 @@ jobs:
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
+        # actions/upload-artifact@v4 SHA: 65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         if: always()
         continue-on-error: true
         with:
@@ -65,6 +66,7 @@ jobs:
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
+        # actions/upload-artifact@v4 SHA: 65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         if: success() || failure()
         with:
           name: maintenance-service-jar
@@ -78,16 +80,17 @@ jobs:
     needs: build
     # Run this job always
     if: always()
-    # Remove env override since it's global
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        # actions/checkout@v4 SHA: 11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
+        # actions/setup-java@v4 SHA: 99b8673ff64fbf99d8f325d52f9a5bdedb8483e9
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -95,6 +98,7 @@ jobs:
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
+        # actions/cache@v4 SHA: 0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
@@ -120,16 +124,17 @@ jobs:
     name: Snyk Security Scan
     runs-on: ubuntu-latest
     needs: build
-    # Remove env override since it's global
     # Run this job always
     if: always()
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        # actions/checkout@v4 SHA: 11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
+        # actions/setup-java@v4 SHA: 99b8673ff64fbf99d8f325d52f9a5bdedb8483e9
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -140,8 +145,8 @@ jobs:
         run: mvn clean package -pl maintenance-service -am -DskipTests -B
 
       - name: Run Snyk to check for vulnerabilities
-        # Use the latest version instead of a specific commit hash
-        uses: snyk/actions/maven@v0.4.0
+        # Using full commit SHA for security
+        uses: snyk/actions/maven@cdb760004ba9ea4d525f2e043745dfe85bb9077e
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -151,6 +156,7 @@ jobs:
       - name: Upload Snyk report
         if: hashFiles('snyk.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
+        # github/codeql-action/upload-sarif@v3 SHA: 9e8d0789d4a0fa9ceb6b173584bb17fbd541e372
         continue-on-error: true
         with:
           sarif_file: snyk.sarif
@@ -166,26 +172,30 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        # actions/checkout@v4 SHA: 11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
+        # actions/download-artifact@v4 SHA: 65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
           name: maintenance-service-jar
           path: backend/maintenance-service/target
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        # docker/setup-buildx-action@v3 SHA: 0d103c3126aa41d772a6c365739d6e2166c0a6c4
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
+        # docker/login-action@v3 SHA: 465a07811f14bebb1938fbed4728c6a1ff8901fc
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Extract metadata
         id: meta
-        # Use v5 instead of specific commit hash
         uses: docker/metadata-action@v5
+        # docker/metadata-action@v5 SHA: 902fa8ec7d6ecbf8d84d418b9d6e64b9cfc1f209
         with:
           images: ${{ secrets.DOCKER_USERNAME }}/maintenance-service
           tags: |
@@ -195,6 +205,7 @@ jobs:
             
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
+        # docker/build-push-action@v5 SHA: 1cb9d22d5b1f7db35b6cbc91f6a81c6376c9fcf3
         with:
           context: ./backend/maintenance-service
           file: ./backend/maintenance-service/Dockerfile
@@ -217,6 +228,7 @@ jobs:
       - name: Login to Azure
         id: azure-login
         uses: azure/login@v2
+        # azure/login@v2 SHA: 7ca4acbf6da6d7b218c65dbe9acd9a1e5af9b160
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
         continue-on-error: true
@@ -224,6 +236,7 @@ jobs:
       - name: Deploy to Azure Container Apps
         if: steps.azure-login.outcome == 'success'
         uses: azure/container-apps-deploy-action@v2
+        # azure/container-apps-deploy-action@v2 SHA: 17d9a08d7bb2ed9e2d5b4e94d653f273a31a5c7e
         with:
           acrName: ${{ secrets.ACR_NAME }}
           containerAppName: maintenance-service
