@@ -25,3 +25,7 @@ test-cloud-apis.ps1
 run-tests.ps1
 write_test_script.py
 test_azure_apis.cmd
+
+# AI Assistant Global Rules
+.cursorrules
+.windsurfrules
