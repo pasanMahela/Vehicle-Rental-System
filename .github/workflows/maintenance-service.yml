@@ -18,6 +18,7 @@ permissions:
 
 env:
   SERVICE_PATH: backend/maintenance-service
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # Job 1: Build and Test
