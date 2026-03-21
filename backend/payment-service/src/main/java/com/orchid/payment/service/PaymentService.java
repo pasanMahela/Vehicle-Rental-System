@@ -1,6 +1,8 @@
 package com.orchid.payment.service;
 
+import com.orchid.payment.client.BookingClient;
 import com.orchid.payment.client.NotificationClient;
+import com.orchid.payment.client.VehicleClient;
 import com.orchid.payment.dto.PaymentDTO;
 import com.orchid.payment.model.Payment;
 import com.orchid.payment.repository.PaymentRepository;
@@ -18,8 +20,25 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final NotificationClient notificationClient;
+    private final BookingClient bookingClient;
+    private final VehicleClient vehicleClient;
 
     public Payment createPayment(PaymentDTO dto) {
+        try {
+            java.util.Map<String, Object> booking = bookingClient.getBookingById(dto.getBookingId());
+            if (booking == null) throw new RuntimeException("Booking not found");
+            
+            String vehicleId = (String) booking.get("vehicleId");
+            if (vehicleId != null) {
+                java.util.Map<String, Object> vehicle = vehicleClient.getVehicleById(vehicleId);
+                if (vehicle == null) throw new RuntimeException("Vehicle not found");
+                log.info("Successfully verified vehicle: {} ({})", vehicleId, vehicle.get("brand"));
+            }
+        } catch (Exception e) {
+            log.error("Booking validation failed for {}: {}", dto.getBookingId(), e.getMessage());
+            throw new RuntimeException("Booking validation failed: " + e.getMessage());
+        }
+
         Payment payment = new Payment();
         payment.setBookingId(dto.getBookingId());
         payment.setCustomerId(dto.getCustomerId());
