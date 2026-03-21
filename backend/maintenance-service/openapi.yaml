@@ -47,6 +47,10 @@ tags:
     description: Schedule and manage maintenance operations
   - name: Maintenance Records
     description: View maintenance history and records
+  - name: Maintenance Operations
+    description: Start, complete, and update maintenance status
+  - name: Administration
+    description: Utility and delete operations
 
 paths:
   /api/maintenance/issues/report:
@@ -132,6 +136,33 @@ paths:
         '404':
           description: Issue not found
 
+    delete:
+      tags:
+        - Administration
+      summary: Delete issue
+      description: Deletes a reported issue by ID. Restricted to maintenance management roles.
+      parameters:
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Issue ID
+        - $ref: '#/components/parameters/XUserRole'
+      responses:
+        '200':
+          description: Issue deleted successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/maintenance/schedule-from-issue/{issueId}:
     post:
       tags:
@@ -183,7 +214,7 @@ paths:
             schema:
               $ref: '#/components/schemas/MaintenanceRecord'
       responses:
-        '201':
+        '200':
           description: Maintenance scheduled successfully
           content:
             application/json:
@@ -217,38 +248,91 @@ paths:
                 items:
                   $ref: '#/components/schemas/MaintenanceRecord'
 
-  /api/maintenance/records/{recordId}:
+  /api/maintenance/upcoming/all:
     get:
       tags:
-        - Maintenance Records
-      summary: Get maintenance record
-      description: Retrieves details of a specific maintenance record.
+        - Maintenance Scheduling
+      summary: Get all upcoming maintenance
+      description: Retrieves all maintenance records in SCHEDULED state.
+      responses:
+        '200':
+          description: List of all upcoming maintenance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaintenanceRecord'
+
+  /api/maintenance/{id}/start:
+    put:
+      tags:
+        - Maintenance Operations
+      summary: Start maintenance
+      description: Marks a maintenance record as IN_PROGRESS.
       parameters:
-        - name: recordId
+        - name: id
           in: path
           required: true
           schema:
             type: string
-          description: Maintenance Record ID
+          description: Maintenance record ID
+        - $ref: '#/components/parameters/XUserRole'
       responses:
         '200':
-          description: Maintenance record details
+          description: Maintenance started successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MaintenanceRecord'
-        '404':
-          description: Maintenance record not found
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
+  /api/maintenance/{id}/complete:
     put:
       tags:
-        - Maintenance Records
-      summary: Update maintenance record status
-      description: |
-        Updates the status of a maintenance record.
-        Only REPAIR_ADVISOR role can update maintenance status.
+        - Maintenance Operations
+      summary: Complete maintenance
+      description: Marks a maintenance record as COMPLETED and stores actual cost.
       parameters:
-        - name: recordId
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/XUserRole'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteMaintenanceRequest'
+      responses:
+        '200':
+          description: Maintenance completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceRecord'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/maintenance/{id}/status:
+    put:
+      tags:
+        - Maintenance Operations
+      summary: Update maintenance status
+      description: Updates the status field of a maintenance record.
+      parameters:
+        - name: id
           in: path
           required: true
           schema:
@@ -262,15 +346,123 @@ paths:
               $ref: '#/components/schemas/UpdateMaintenanceStatusRequest'
       responses:
         '200':
-          description: Maintenance record updated
+          description: Status updated successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MaintenanceRecord'
-        '404':
-          description: Record not found
-        '403':
-          description: Access denied
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/maintenance/history/vehicle/{vehicleId}:
+    get:
+      tags:
+        - Maintenance Records
+      summary: Get maintenance history for a vehicle
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Vehicle maintenance history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaintenanceRecord'
+
+  /api/maintenance/history/all:
+    get:
+      tags:
+        - Maintenance Records
+      summary: Get full maintenance history
+      responses:
+        '200':
+          description: Full maintenance history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaintenanceRecord'
+
+  /api/maintenance/history/vehicle/{vehicleId}/completed:
+    get:
+      tags:
+        - Maintenance Records
+      summary: Get completed maintenance for a vehicle
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Completed maintenance records for the vehicle
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaintenanceRecord'
+
+  /api/maintenance/generate-recurring:
+    post:
+      tags:
+        - Administration
+      summary: Generate recurring maintenance records
+      description: Triggers generation of recurring maintenance entries that are due.
+      parameters:
+        - $ref: '#/components/parameters/XUserRole'
+      responses:
+        '200':
+          description: Recurring maintenance generation completed
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/maintenance/records/{id}:
+    delete:
+      tags:
+        - Administration
+      summary: Delete maintenance record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Maintenance record ID
+        - $ref: '#/components/parameters/XUserRole'
+      responses:
+        '200':
+          description: Maintenance record deleted successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   parameters:
@@ -353,54 +545,87 @@ components:
       required:
         - vehicleId
         - maintenanceType
-        - scheduledDate
       properties:
         id:
           type: string
-          description: Maintenance record ID
+          description: Maintenance record ID (MongoDB ObjectId)
           readOnly: true
         vehicleId:
           type: string
-          description: Vehicle ID
+          description: Vehicle ID (MongoDB ObjectId)
         maintenanceType:
           type: string
-          description: Type of maintenance
-          enum: [ROUTINE, REPAIR, INSPECTION, PREVENTIVE]
+          description: Type of maintenance (for example SCHEDULED, REPAIR, ACCIDENT, BREAKDOWN)
         description:
           type: string
           description: Detailed maintenance description
           nullable: true
-        scheduledDate:
+        isRecurring:
+          type: boolean
+          description: Whether this is part of a recurring maintenance cycle
+          default: false
+        recurrencePattern:
           type: string
-          format: date-time
-          description: Scheduled date for maintenance
-        completedDate:
+          description: Recurrence pattern for recurring maintenance
+          enum: [MONTHLY, QUARTERLY, YEARLY]
+          nullable: true
+        nextDueDate:
           type: string
-          format: date-time
-          description: Actual completion date
+          format: date
+          description: Next due date for recurring maintenance
+          nullable: true
+        issueId:
+          type: string
+          description: Linked reported issue ID, if created from issue flow
           nullable: true
         estimatedCost:
           type: number
-          format: decimal
-          description: Estimated cost for maintenance
+          format: double
+          description: Estimated maintenance cost
           nullable: true
         actualCost:
           type: number
-          format: decimal
-          description: Actual cost after completion
+          format: double
+          description: Actual maintenance cost after completion
           nullable: true
         status:
           type: string
           enum: [SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED]
-          description: Current status
-          default: SCHEDULED
-        technician:
+          description: Current status of maintenance record
+        scheduledDate:
           type: string
-          description: Assigned technician
+          format: date-time
+          description: Scheduled date and time
           nullable: true
-        notes:
+        startDate:
           type: string
-          description: Additional notes
+          format: date-time
+          description: Date and time when maintenance started
+          nullable: true
+        completionDate:
+          type: string
+          format: date-time
+          description: Date and time when maintenance was completed
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          nullable: true
+
+    CompleteMaintenanceRequest:
+      type: object
+      description: Request payload for completing maintenance
+      properties:
+        actualCost:
+          type: number
+          format: double
+          description: Final maintenance cost
           nullable: true
 
     ScheduleFromIssueRequest:
@@ -412,11 +637,11 @@ components:
         scheduledDate:
           type: string
           format: date-time
-          description: When the maintenance should be scheduled
+          description: Date/time to schedule maintenance
         estimatedCost:
           type: number
-          format: decimal
-          description: Estimated cost for the maintenance
+          format: double
+          description: Estimated cost for the scheduled work
           nullable: true
 
     UpdateMaintenanceStatusRequest:
@@ -427,22 +652,8 @@ components:
       properties:
         status:
           type: string
-          enum: [IN_PROGRESS, COMPLETED, CANCELLED]
+          enum: [SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED]
           description: New status for the maintenance record
-        completedDate:
-          type: string
-          format: date-time
-          description: Completion date (required if status is COMPLETED)
-          nullable: true
-        actualCost:
-          type: number
-          format: decimal
-          description: Actual cost (optional)
-          nullable: true
-        notes:
-          type: string
-          description: Additional notes
-          nullable: true
 
     ErrorResponse:
       type: object
