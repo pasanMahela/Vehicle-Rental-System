@@ -43,7 +43,6 @@ jobs:
       - name: Run Tests
         working-directory: backend
         run: mvn test -pl auth-service -B
-        continue-on-error: true
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
@@ -186,11 +185,10 @@ jobs:
           az login --service-principal \
             -u "$ACR_USER" \
             -p "$ACR_PASS" \
-            --tenant "$TENANT_ID" || true
+            --tenant "$TENANT_ID"
 
           az containerapp update \
             --name auth-service \
             --resource-group "$RESOURCE_GROUP" \
             --image "$ACR_SERVER/auth-service:$COMMIT_SHA" \
-            2>/dev/null || echo "Auto-deploy skipped - manual deploy available"
-        continue-on-error: true
+
