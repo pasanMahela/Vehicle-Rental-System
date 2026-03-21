@@ -11,156 +11,95 @@ on:
     paths:
       - 'backend/maintenance-service/**'
 
-permissions:
-  contents: read
-  security-events: write
-  actions: read
-
 env:
   SERVICE_PATH: backend/maintenance-service
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # Job 1: Build and Test
-  build:
+  build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
 
-      - name: Build with Maven
+      - name: Build and Test
         working-directory: backend
         run: |
-          echo "Building maintenance-service..."
-          mvn clean package -pl maintenance-service -am -DskipTests -B -e
-        continue-on-error: false
-
-      - name: Run Unit and Integration Tests
-        working-directory: backend
-        run: |
-          echo "Running tests with test profile..."
-          mvn test -pl maintenance-service -B -Dspring.profiles.active=test
-          echo "TEST RUN SUCCESSFUL"
+          mvn clean test -pl maintenance-service -am -B -Dspring.profiles.active=test
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
-        continue-on-error: true
         with:
           name: test-results
           path: backend/maintenance-service/target/surefire-reports/
 
-      - name: Upload JAR artifact
+      - name: Upload JAR
         uses: actions/upload-artifact@v4
-        if: success() || failure()
+        if: success()
         with:
           name: maintenance-service-jar
           path: backend/maintenance-service/target/*.jar
-          if-no-files-found: warn
 
-  # Job 2: Code Quality - SonarCloud
-  sonarcloud:
-    name: SonarCloud Analysis
+  # Job 2: Quality & Security (Optional - remove if not needed)
+  quality-checks:
+    name: Quality & Security
     runs-on: ubuntu-latest
-    needs: build
-    # Run this job always
+    needs: build-and-test
     if: always()
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      
+      - uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
 
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-
-      - name: Build and analyze
+      - name: SonarCloud Analysis
+        if: secrets.SONAR_TOKEN != ''
         working-directory: backend
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          echo "Running SonarCloud analysis..."
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -pl maintenance-service -am \
-            -Dsonar.projectKey=${{ secrets.SONAR_MAINTENANCE_PROJECT_KEY || 'dinith114_Vehicle-Rental-System' }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION || 'dinith114' }} \
+          mvn verify sonar:sonar -pl maintenance-service -am \
+            -Dsonar.projectKey=dinith114_Vehicle-Rental-System \
+            -Dsonar.organization=dinith114 \
             -Dsonar.host.url=https://sonarcloud.io \
-            -DskipTests || echo "SonarCloud analysis failed but continuing..."
-        continue-on-error: true
+            -DskipTests
 
-  # Job 3: Security Scan - Snyk
-  security-scan:
-    name: Snyk Security Scan
-    runs-on: ubuntu-latest
-    needs: build
-    # Run this job always
-    if: always()
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Build project for Snyk
-        working-directory: backend
-        run: mvn clean package -pl maintenance-service -am -DskipTests -B
-
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/maven@cdb760004ba9ea4d525f2e043745dfe85bb9077e
+      - name: Snyk Security Scan
+        if: secrets.SNYK_TOKEN != ''
+        uses: snyk/actions/maven@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --file=backend/maintenance-service/pom.xml --severity-threshold=high --sarif-file-output=snyk.sarif
+          args: --file=backend/maintenance-service/pom.xml --severity-threshold=high
 
-      - name: Upload Snyk report
-        if: hashFiles('snyk.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        continue-on-error: true
-        with:
-          sarif_file: snyk.sarif
-
-  # Job 4: Build and Push Docker Image
+  # Job 3: Docker Build & Push
   docker:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
-    needs: [build, security-scan]
-    # Only run on main branch pushes
+    needs: build-and-test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download JAR artifact
+      - uses: actions/checkout@v4
+      
+      - name: Download JAR
         uses: actions/download-artifact@v4
         with:
           name: maintenance-service-jar
@@ -175,49 +114,29 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ secrets.DOCKER_USERNAME }}/maintenance-service
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix=
-            type=raw,value=latest
-            
-      - name: Build and push Docker image
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: ./backend/maintenance-service
-          file: ./backend/maintenance-service/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ secrets.DOCKER_USERNAME }}/maintenance-service:latest,${{ secrets.DOCKER_USERNAME }}/maintenance-service:${{ github.sha }}
 
-  # Job 5: Deploy to Azure Container Apps
+  # Job 4: Deploy
   deploy:
     name: Deploy to Azure
     runs-on: ubuntu-latest
     needs: docker
-    # Only run on main branch pushes
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment: production
 
     steps:
       - name: Login to Azure
-        id: azure-login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-        continue-on-error: true
 
       - name: Deploy to Azure Container Apps
-        if: steps.azure-login.outcome == 'success'
         uses: azure/container-apps-deploy-action@v2
         with:
-          acrName: ${{ secrets.ACR_NAME }}
           containerAppName: maintenance-service
           resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
           imageToDeploy: ${{ secrets.DOCKER_USERNAME }}/maintenance-service:latest
