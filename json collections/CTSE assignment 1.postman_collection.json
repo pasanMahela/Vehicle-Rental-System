@@ -1,0 +1,984 @@
+{
+  "info": {
+    "_postman_id": "c9e5f081-f5e7-48a1-962d-b23d4887b4b0",
+    "name": "CTSE assignment 1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "36902506"
+  },
+  "item": [
+    {
+      "name": "Report an accident",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VySWQiOiI2OWFlNGE0N2RhZDQ1MTU2OWRhOGZkYjAiLCJ1c2VybmFtZSI6ImFkdmlzb3IxIiwicm9sZSI6IlJFUEFJUl9BRFZJU09SIiwic3ViIjoiYWR2aXNvcjEiLCJpYXQiOjE3NzMwMjk5NjMsImV4cCI6MTc3MzExNjM2M30.YMDUWRwdFImV_Ducv1NANZyq-07atWG7S9WTSRWlE1LZwNYb12rWpC7Ye6JStfIi",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"vehicleId\": \"69ae4a3e67b9c46bb736ae2a\",\r\n    \"bookingId\": \"BOOK001\",\r\n    \"issueType\": \"ACCIDENT\",\r\n    \"description\": \"Front bumper damaged in parking lot collision nim\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/issues/report",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "issues",
+            "report"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Report Breakdown Issue",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiUkVQQUlSX0FEVklTT1IiLCJ1c2VySWQiOiI2OWFiYmVkMTgyYjNiODUwZmVhOWRjZTYiLCJ1c2VybmFtZSI6ImFkdmlzb3IxIiwic3ViIjoiYWR2aXNvcjEiLCJpYXQiOjE3NzI4OTI1MTYsImV4cCI6MTc3Mjk3ODkxNn0.BRxWpIcC7dP-2MQgcQ18OfbpoJQOxahOdvHzTg4siuq14VqAu_gWSnT-nLYQC5JD",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"vehicleId\": \"69abbed0a2723f55da8eb777\",\r\n    \"issueType\": \"BREAKDOWN\",\r\n    \"description\": \"Engine overheating, check engine light on\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/issues/report",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "issues",
+            "report"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Schedule Maintenance from Issue",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiUkVQQUlSX0FEVklTT1IiLCJ1c2VySWQiOiI2OWFiYmVkMTgyYjNiODUwZmVhOWRjZTYiLCJ1c2VybmFtZSI6ImFkdmlzb3IxIiwic3ViIjoiYWR2aXNvcjEiLCJpYXQiOjE3NzI4OTExNzYsImV4cCI6MTc3Mjk3NzU3Nn0.4aLFpFDds47YtAmWACet521pm9RN6faNNQb29XMDGz62mVGam2RWF79n5-xXX7t3",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"scheduledDate\": \"2024-01-20T09:00:00\",\r\n    \"estimatedCost\": 500.00\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/schedule-from-issue/69ac31f6b6efbf182ee772f5",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "schedule-from-issue",
+            "69ac31f6b6efbf182ee772f5"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Scheduled/Recurring Maintenance monthly",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiUkVQQUlSX0FEVklTT1IiLCJ1c2VySWQiOiI2OWFiYmVkMTgyYjNiODUwZmVhOWRjZTYiLCJ1c2VybmFtZSI6ImFkdmlzb3IxIiwic3ViIjoiYWR2aXNvcjEiLCJpYXQiOjE3NzI4OTExNzYsImV4cCI6MTc3Mjk3NzU3Nn0.4aLFpFDds47YtAmWACet521pm9RN6faNNQb29XMDGz62mVGam2RWF79n5-xXX7t3",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"vehicleId\": \"69abbed0a2723f55da8eb779\",\r\n    \"maintenanceType\": \"SCHEDULED\",\r\n    \"description\": \"Tire rotation and balancing\",\r\n    \"isRecurring\": true,\r\n    \"recurrencePattern\": \"MONTHLY\",\r\n    \"estimatedCost\": 49.99,\r\n    \"scheduledDate\": \"2024-02-15T10:00:00\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/scheduled",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "scheduled"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Scheduled/Recurring Maintenance quartly",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiUkVQQUlSX0FEVklTT1IiLCJ1c2VySWQiOiI2OWFiYmVkMTgyYjNiODUwZmVhOWRjZTYiLCJ1c2VybmFtZSI6ImFkdmlzb3IxIiwic3ViIjoiYWR2aXNvcjEiLCJpYXQiOjE3NzI4OTExNzYsImV4cCI6MTc3Mjk3NzU3Nn0.4aLFpFDds47YtAmWACet521pm9RN6faNNQb29XMDGz62mVGam2RWF79n5-xXX7t3",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"vehicleId\": \"69abbed0a2723f55da8eb779\",\r\n    \"maintenanceType\": \"SCHEDULED\",\r\n    \"description\": \"Tire rotation and balancing\",\r\n    \"isRecurring\": true,\r\n    \"recurrencePattern\": \"QUARTERLY\",\r\n    \"estimatedCost\": 49.99,\r\n    \"scheduledDate\": \"2024-02-15T10:00:00\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/scheduled",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "scheduled"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Scheduled/Recurring Maintenance yearly",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiUkVQQUlSX0FEVklTT1IiLCJ1c2VySWQiOiI2OWFiYmVkMTgyYjNiODUwZmVhOWRjZTYiLCJ1c2VybmFtZSI6ImFkdmlzb3IxIiwic3ViIjoiYWR2aXNvcjEiLCJpYXQiOjE3NzI4OTExNzYsImV4cCI6MTc3Mjk3NzU3Nn0.4aLFpFDds47YtAmWACet521pm9RN6faNNQb29XMDGz62mVGam2RWF79n5-xXX7t3",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"vehicleId\": \"69abbed0a2723f55da8eb779\",\r\n    \"maintenanceType\": \"SCHEDULED\",\r\n    \"description\": \"Annual comprehensive vehicle service\",\r\n    \"isRecurring\": true,\r\n    \"recurrencePattern\": \"YEARLY\",\r\n    \"estimatedCost\": 399.99,\r\n    \"scheduledDate\": \"2024-03-01T09:00:00\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/scheduled",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "scheduled"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Start Maintenance",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VybmFtZSI6Im5pbSIsInJvbGUiOiJSRVBBSVJfQURWSVNPUiIsInVzZXJJZCI6IjY5YTg2MjM4YTZlMWE0N2NhYTM1Yzc3MiIsInN1YiI6Im5pbSIsImlhdCI6MTc3Mjg1Njc5MywiZXhwIjoxNzcyOTQzMTkzfQ.dlWYyKA1rJBrLad1CJHpQ_mD0mgr8IkKgmWJs1O9_5F94b31-aOBFbHdvdyLXzfi",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/69ac33c2b6efbf182ee772fa/start",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "69ac33c2b6efbf182ee772fa",
+            "start"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Complete Maintenance with Actual Cost",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VybmFtZSI6Im5pbSIsInJvbGUiOiJSRVBBSVJfQURWSVNPUiIsInVzZXJJZCI6IjY5YTg2MjM4YTZlMWE0N2NhYTM1Yzc3MiIsInN1YiI6Im5pbSIsImlhdCI6MTc3Mjg1Njc5MywiZXhwIjoxNzcyOTQzMTkzfQ.dlWYyKA1rJBrLad1CJHpQ_mD0mgr8IkKgmWJs1O9_5F94b31-aOBFbHdvdyLXzfi",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"actualCost\": 575.50\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/69abbcaef10d642d9de4b770/complete",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "69abbcaef10d642d9de4b770",
+            "complete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Status",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VybmFtZSI6Im5pbSIsInVzZXJJZCI6IjY5YTg2MjM4YTZlMWE0N2NhYTM1Yzc3MiIsInJvbGUiOiJSRVBBSVJfQURWSVNPUiIsInN1YiI6Im5pbSIsImlhdCI6MTc3MjgwODM4MCwiZXhwIjoxNzcyODk0NzgwfQ.JJlGrrF2phWYSf4QtsmU2GsFENntdYpJwHqytRfZwS1OU0EoIchK7r8ojVznXJq8",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"status\": \"IN_PROGRESS\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/69a7f1a44f631268900639e5/status",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "69a7f1a44f631268900639e5",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Vehicle Issues",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer ",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/issues/vehicle/VH001",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "issues",
+            "vehicle",
+            "VH001"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Upcoming Maintenance for Vehicle",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer ",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/upcoming/vehicle/VH001",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "upcoming",
+            "vehicle",
+            "VH001"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Upcoming Maintenance",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer ",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/upcoming/all",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "upcoming",
+            "all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Vehicle Maintenance History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer ",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/history/vehicle/VH001",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "history",
+            "vehicle",
+            "VH001"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Vehicle Completed Maintenance",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer ",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/history/vehicle/VH001/completed",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "history",
+            "vehicle",
+            "VH001",
+            "completed"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Maintenance History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VySWQiOiI2OWI3Zjk4YzhkNTRkNDFkNDc0MzFiYWYiLCJ1c2VybmFtZSI6ImFkdmlzb3IxIiwicm9sZSI6IlJFUEFJUl9BRFZJU09SIiwic3ViIjoiYWR2aXNvcjEiLCJpYXQiOjE3NzM2NjYxNjUsImV4cCI6MTc3Mzc1MjU2NX0.3PT__ZhM0N58lEhpYPk2Y45TNSaUuGzwM8Y_WoTT-yS1uCSAQhwHn3j0hegWiMZD",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/history/all",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "history",
+            "all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Recurring Maintenance",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VySWQiOiI2OWE4NDI3MmMwZTUwMDNmYjY5MjVkYTAiLCJyb2xlIjoiQ1VTVE9NRVIiLCJ1c2VybmFtZSI6InNhbWFkaW5pIiwic3ViIjoic2FtYWRpbmkiLCJpYXQiOjE3NzI2ODA1MjcsImV4cCI6MTc3Mjc2NjkyN30.B3pAPMTuA99PvoQHIVbSi2CMdRO_1TZcaWpHrV5DQijfI_PHdtTHL5eGqxgqNbsb",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/generate-recurring?",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "generate-recurring"
+          ],
+          "query": [
+            {
+              "key": "",
+              "value": null
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Maintenance Record",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer ",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/records/MAINT001?",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "records",
+            "MAINT001"
+          ],
+          "query": [
+            {
+              "key": "",
+              "value": null,
+              "type": "text"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Issue",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VybmFtZSI6InNhbWFkaW5pIiwicm9sZSI6IkNVU1RPTUVSIiwidXNlcklkIjoiNjlhODQyNzJjMGU1MDAzZmI2OTI1ZGEwIiwic3ViIjoic2FtYWRpbmkiLCJpYXQiOjE3NzI2MzUxNzcsImV4cCI6MTc3MjcyMTU3N30.vJRj8qCBsr8hc5BkRvXAfsrrgey4CO6X2xf0FDah1TLbyQpu1zpZEaD0cL8sm-b8",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/maintenance/issues/ISSUE001",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "maintenance",
+            "issues",
+            "ISSUE001"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "customer login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"username\": \"samadini\",\r\n    \"password\": \"password123\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "REPAIR_ADVISOR login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"username\": \"advisor1\",\r\n    \"password\": \"Pass@123\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "admin login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"username\": \"admin\",\r\n    \"password\": \"1234Pasan.\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get vehicles",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJyb2xlIjoiUkVQQUlSX0FEVklTT1IiLCJ1c2VybmFtZSI6InNhbWFkaW5pIiwidXNlcklkIjoiNjlhZjg3Njg0NzdjOTI2NDg4NTE5MGZiIiwic3ViIjoic2FtYWRpbmkiLCJpYXQiOjE3NzMxMTE0MjksImV4cCI6MTc3MzE5NzgyOX0.tumXOuu3DuBHqna0Wfylwde7E69_NDmKtFFEIwt-CHZypukSUPG-tkIvp-RE9dXl",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/vehicles",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "vehicles"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get bookings",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VybmFtZSI6Im5pbSIsInJvbGUiOiJSRVBBSVJfQURWSVNPUiIsInVzZXJJZCI6IjY5YTg2MjM4YTZlMWE0N2NhYTM1Yzc3MiIsInN1YiI6Im5pbSIsImlhdCI6MTc3Mjg1Njc5MywiZXhwIjoxNzcyOTQzMTkzfQ.dlWYyKA1rJBrLad1CJHpQ_mD0mgr8IkKgmWJs1O9_5F94b31-aOBFbHdvdyLXzfi",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/bookings",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "bookings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "new user register",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-User-Role",
+            "value": "OWNER",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"samadini\",\r\n  \"email\": \"nimlasamadini@gmail.com\",\r\n  \"password\": \"Password123\",\r\n  \"role\": \"REPAIR_ADVISOR\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/register",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "verify account",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"userId\": \"69af8768477c9264885190fb\",\r\n  \"code\": \"307439\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/verify",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "verify"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "created repair advisor login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"samadini\",\r\n  \"password\": \"Password123\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "maintenance service health",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    }
+  ]
+}
