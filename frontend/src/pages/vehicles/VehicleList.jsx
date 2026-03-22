@@ -9,8 +9,20 @@ import {
   Popconfirm,
   App,
   Card,
+  Row,
+  Col,
+  Radio,
+  Typography,
+  Tooltip,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, TrophyOutlined } from '@ant-design/icons';
+import { 
+  PlusOutlined, 
+  EditOutlined, 
+  DeleteOutlined, 
+  TrophyOutlined,
+  AppstoreOutlined,
+  BarsOutlined
+} from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
 import {
   getAllVehicles,
@@ -43,6 +55,7 @@ export default function VehicleList() {
   const [editing, setEditing] = useState(null);
   const [brands, setBrands] = useState([]);
   const [types, setTypes] = useState([]);
+  const [viewMode, setViewMode] = useState('grid');
   const [filters, setFilters] = useState({
     brand: undefined,
     type: undefined,
@@ -215,25 +228,20 @@ export default function VehicleList() {
               </Button>
             </Popconfirm>
           )}
-          {(hasRole('REPAIR_ADVISOR') || hasRole('OWNER')) && (
-            <Select
-              size="small"
-              value={record.availabilityStatus}
-              options={STATUS_OPTIONS}
-              onChange={(val) => handleStatusChange(record.vehicleId, val)}
-              style={{ width: 120 }}
-            />
-          )}
-        </Space>
-      ),
-    },
-  ];
+          </Space>
+        ),
+      },
+    ];
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-xl font-semibold m-0">Vehicles</h2>
         <Space>
+          <Radio.Group value={viewMode} onChange={(e) => setViewMode(e.target.value)} buttonStyle="solid">
+            <Radio.Button value="grid"><AppstoreOutlined /> Grid</Radio.Button>
+            <Radio.Button value="list"><BarsOutlined /> List</Radio.Button>
+          </Radio.Group>
           <Button
             type={rankedView ? 'primary' : 'default'}
             icon={<TrophyOutlined />}
@@ -256,19 +264,19 @@ export default function VehicleList() {
         </Space>
       </div>
 
-      <Card className="shadow-sm">
-        <Space direction="vertical" size="middle" className="w-full mb-4">
-          <Input.Search
-            placeholder="Search by brand or model..."
-            allowClear
-            value={filters.search}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, search: e.target.value }))
-            }
-            onSearch={(v) => setFilters((f) => ({ ...f, search: v }))}
-            style={{ maxWidth: 280 }}
-          />
-          <Space wrap>
+      <Card className="shadow-sm mb-4">
+        <Space direction="vertical" size="middle" className="w-full">
+          <div className="flex flex-wrap gap-4">
+            <Input.Search
+              placeholder="Search by brand or model..."
+              allowClear
+              value={filters.search}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, search: e.target.value }))
+              }
+              onSearch={(v) => setFilters((f) => ({ ...f, search: v }))}
+              style={{ maxWidth: 280 }}
+            />
             <Select
               placeholder="Filter by Brand"
               allowClear
@@ -299,22 +307,97 @@ export default function VehicleList() {
               options={STATUS_OPTIONS}
               style={{ width: 160 }}
             />
-          </Space>
+          </div>
         </Space>
-
-        <Table
-          columns={columns}
-          dataSource={filteredVehicles}
-          rowKey="vehicleId"
-          loading={loading}
-          rowClassName={() => 'hover:bg-blue-50/50 transition-colors'}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `Total ${total} vehicles`,
-          }}
-        />
       </Card>
+
+      {loading ? (
+        <Table loading={true} columns={columns} dataSource={[]} />
+      ) : viewMode === 'list' ? (
+        <Card className="shadow-sm">
+          <Table
+            columns={columns}
+            dataSource={filteredVehicles}
+            rowKey="vehicleId"
+            rowClassName={() => 'hover:bg-blue-50/50 transition-colors'}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showTotal: (total) => `Total ${total} vehicles`,
+            }}
+          />
+        </Card>
+      ) : (
+        <Row gutter={[16, 16]}>
+          {filteredVehicles.map(record => (
+            <Col xs={24} sm={12} md={8} lg={6} key={record.vehicleId}>
+              <Card 
+                hoverable 
+                cover={
+                  <img 
+                    alt={record.model} 
+                    src={record.imageUrl || 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'} 
+                    style={{ height: 160, objectFit: 'cover' }} 
+                    onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'; }}
+                  />
+                }
+                className="h-full flex flex-col shadow-sm border border-gray-100"
+                styles={{ body: { flexGrow: 1, display: 'flex', flexDirection: 'column' } }}
+                actions={
+                  hasRole('OWNER') ? [
+                    <Tooltip title="Edit" key="edit">
+                      <EditOutlined onClick={() => { setEditing(record); setFormOpen(true); }} />
+                    </Tooltip>,
+                    <Popconfirm
+                      title="Delete vehicle"
+                      description="Are you sure?"
+                      onConfirm={() => handleDelete(record.vehicleId)}
+                      key="delete"
+                    >
+                      <Tooltip title="Delete">
+                        <DeleteOutlined className="text-red-500" />
+                      </Tooltip>
+                    </Popconfirm>
+                  ] : []
+                }
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <Typography.Title level={5} className="m-0 text-gray-800">{record.brand} {record.model}</Typography.Title>
+                  <Tag color={STATUS_COLORS[record.availabilityStatus] || 'default'} className="m-0">
+                    {record.availabilityStatus}
+                  </Tag>
+                </div>
+                
+                {rankedView && (
+                  <div className="mb-3 bg-yellow-50 p-2 rounded-md border border-yellow-100 flex justify-between items-center">
+                    <span className="font-semibold">Rank: {rankMedal(record.popularityRank)}</span>
+                    <Tag color="blue">{record.bookingCount} bookings</Tag>
+                  </div>
+                )}
+
+                <div className="text-sm text-gray-500 mb-4">
+                  <div className="flex justify-between py-1 border-b border-gray-50">
+                    <span>Type:</span> <span className="font-medium text-gray-700">{record.type}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-gray-50">
+                    <span>Price/Day:</span> <span className="font-medium text-blue-600">LKR {record.pricePerDay?.toLocaleString() || '0'}</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span>Deposit:</span> <span className="font-medium text-gray-700">LKR {record.advanceDeposit?.toLocaleString() || '0'}</span>
+                  </div>
+                </div>
+                </Card>
+              </Col>
+            ))}
+          {filteredVehicles.length === 0 && !loading && (
+            <Col span={24}>
+              <div className="w-full py-12 text-center text-gray-500 bg-white rounded-lg border border-dashed border-gray-300">
+                No vehicles found matching your criteria.
+              </div>
+            </Col>
+          )}
+        </Row>
+      )}
 
       <VehicleForm
         open={formOpen}

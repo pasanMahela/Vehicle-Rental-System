@@ -27,6 +27,8 @@ public class Vehicle {
 
     private AvailabilityStatus availabilityStatus;
 
+    private String imageUrl;
+
     @Transient
     private int bookingCount;
 
