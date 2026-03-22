@@ -20,7 +20,7 @@ public class OpenApiConfig {
         localServer.setDescription("Local Development Server");
 
         Server productionServer = new Server();
-        productionServer.setUrl("https://payment-service.azurecontainerapps.io");
+        productionServer.setUrl("https://payment-service.agreeablepebble-671ffeb1.eastasia.azurecontainerapps.io");
         productionServer.setDescription("Production Server (Azure Container Apps)");
 
         Contact contact = new Contact();
