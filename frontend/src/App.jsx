@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import VehicleList from './pages/vehicles/VehicleList';
+import CustomerVehicleList from './pages/vehicles/CustomerVehicleList';
 import BookingList from './pages/bookings/BookingList';
 import PaymentList from './pages/payments/PaymentList';
 import PaymentPage from './pages/payments/PaymentPage';
@@ -27,6 +28,9 @@ export default function App() {
           }>
             <Route index element={<Dashboard />} />
             <Route path="vehicles" element={<VehicleList />} />
+            <Route path="vehicles/book" element={
+              <ProtectedRoute roles={['CUSTOMER', 'BOOKING_CASHIER', 'OWNER']}><CustomerVehicleList /></ProtectedRoute>
+            } />
             <Route path="bookings" element={<BookingList />} />
             <Route path="payments" element={
               <ProtectedRoute roles={['CUSTOMER', 'BOOKING_CASHIER', 'OWNER']}><PaymentList /></ProtectedRoute>

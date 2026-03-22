@@ -87,9 +87,13 @@ jobs:
           if [ -n "$SONAR_TOKEN" ]; then
             mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
               -pl booking-service -am \
+              -Dsonar.projectName="Vehicle Rental System - Booking Service" \
               -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY || 'dinith114_Vehicle-Rental-System' }} \
               -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION || 'dinith114' }} \
               -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.sources=booking-service/src/main/java \
+              -Dsonar.java.binaries=booking-service/target/classes \
+              -Dsonar.coverage.jacoco.xmlReportPaths=booking-service/target/site/jacoco/jacoco.xml \
               -DskipTests
           else
             echo "SONAR_TOKEN not set, skipping SonarCloud analysis"
