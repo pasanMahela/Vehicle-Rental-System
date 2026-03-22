@@ -1,0 +1,47 @@
+const baseUrl = 'http://localhost:8082/api/vehicles';
+let vehicleId;
+
+async function runTests() {
+  console.log('1. GET All Vehicles...');
+  let res = await fetch(baseUrl);
+  let data = await res.json();
+  console.log('Status:', res.status, '| Total Vehicles:', data.length);
+
+  console.log('\n2. GET Available Vehicles...');
+  res = await fetch(baseUrl + '/available');
+  data = await res.json();
+  console.log('Status:', res.status, '| Available Vehicles:', data.length);
+
+  console.log('\n3. POST Create Vehicle...');
+  res = await fetch(baseUrl, { 
+    method: 'POST', 
+    headers: { 'Content-Type': 'application/json', 'X-User-Role': 'OWNER' }, 
+    body: JSON.stringify({ brand: 'PostmanTest', model: 'M1', type: 'SUV', pricePerDay: 5000 }) 
+  });
+  data = await res.json();
+  console.log('Status:', res.status, '| Created ID:', data.vehicleId);
+  vehicleId = data.vehicleId;
+
+  console.log('\n4. GET Vehicle by ID...');
+  res = await fetch(baseUrl + '/' + vehicleId);
+  data = await res.json();
+  console.log('Status:', res.status, '| Retrieved Brand:', data.brand);
+
+  console.log('\n5. PUT Update Vehicle...');
+  res = await fetch(baseUrl + '/' + vehicleId, { 
+    method: 'PUT', 
+    headers: { 'Content-Type': 'application/json', 'X-User-Role': 'OWNER' }, 
+    body: JSON.stringify({ brand: 'UpdatedPostmanTest', model: 'M1', type: 'SUV', pricePerDay: 6000 }) 
+  });
+  data = await res.json();
+  console.log('Status:', res.status, '| Updated Brand:', data.brand);
+
+  console.log('\n6. DEL Remove Vehicle...');
+  res = await fetch(baseUrl + '/' + vehicleId, { 
+    method: 'DELETE', 
+    headers: { 'X-User-Role': 'OWNER' } 
+  });
+  console.log('Status:', res.status);
+}
+
+runTests().catch(console.error);

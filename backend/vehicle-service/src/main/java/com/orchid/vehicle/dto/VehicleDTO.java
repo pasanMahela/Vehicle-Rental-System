@@ -27,4 +27,6 @@ public class VehicleDTO {
     private double advanceDeposit;
 
     private String availabilityStatus;
+
+    private String imageUrl;
 }
