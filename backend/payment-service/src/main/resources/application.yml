@@ -17,6 +17,10 @@ notification:
   service:
     url: ${NOTIFICATION_SERVICE_URL:http://localhost:8080}
 
+vehicle:
+  service:
+    url: ${VEHICLE_SERVICE_URL:http://localhost:8080}
+
 # Stripe Payment Gateway Configuration
 stripe:
   secret-key: ${STRIPE_SECRET_KEY:your_stripe_secret_key_here}

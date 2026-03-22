@@ -7,3 +7,26 @@ target/
 *.iml
 .DS_Store
 .env
+backend/maintenance-service/src/main/resources/maintenance-secrets.env
+
+# Antigravity / Gemini
+.gemini/
+
+# Task progress/documentation files (local only)
+*_PROGRESS.md
+*_TASK.md
+DEPLOYMENT_REPORT.md
+DEPLOYMENT_FULL_REPORT.md
+PROJECT_DETAILS.md
+API_TESTING_GUIDE.md
+VIVA_PREPARATION_GUIDE.md
+
+# Test scripts (local only)
+test-cloud-apis.ps1
+run-tests.ps1
+write_test_script.py
+test_azure_apis.cmd
+
+# AI Assistant Global Rules
+.cursorrules
+.windsurfrules
