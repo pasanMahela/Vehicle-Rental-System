@@ -28,8 +28,8 @@ stripe:
 
 # Role-based Access Control
 access-control:
-  payment-manage: BOOKING_CASHIER,OWNER
-  payment-view: BOOKING_CASHIER,OWNER
+  payment-manage: CUSTOMER,BOOKING_CASHIER,OWNER
+  payment-view: CUSTOMER,BOOKING_CASHIER,OWNER
 
 # Actuator endpoints for health checks and monitoring
 management:
