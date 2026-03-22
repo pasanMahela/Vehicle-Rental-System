@@ -45,6 +45,11 @@ management:
 springdoc:
   api-docs:
     path: /api-docs
+    enabled: true
   swagger-ui:
     path: /swagger-ui.html
+    enabled: true
     operationsSorter: method
+    disable-swagger-default-url: true
+  packages-to-scan: com.orchid.payment.controller
+  show-actuator: false
