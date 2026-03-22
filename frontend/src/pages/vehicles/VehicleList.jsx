@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Table,
   Button,
@@ -33,6 +34,7 @@ import {
   getRankedVehicles,
 } from '../../api/vehicleApi';
 import VehicleForm from './VehicleForm';
+import BookingForm from '../bookings/BookingForm';
 
 const STATUS_COLORS = {
   AVAILABLE: 'success',
@@ -47,11 +49,14 @@ const STATUS_OPTIONS = [
 ];
 
 export default function VehicleList() {
+  const navigate = useNavigate();
   const { hasRole } = useAuth();
   const { message } = App.useApp();
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
+  const [bookingFormOpen, setBookingFormOpen] = useState(false);
+  const [selectedVehicleForBooking, setSelectedVehicleForBooking] = useState(null);
   const [editing, setEditing] = useState(null);
   const [brands, setBrands] = useState([]);
   const [types, setTypes] = useState([]);
@@ -108,6 +113,10 @@ export default function VehicleList() {
 
   const filteredVehicles = useMemo(() => {
     return vehicles.filter((v) => {
+      // Customers can only see available vehicles
+      if (hasRole('CUSTOMER') && v.availabilityStatus !== 'AVAILABLE') {
+        return false;
+      }
       const matchBrand = !filters.brand || v.brand === filters.brand;
       const matchType = !filters.type || v.type === filters.type;
       const matchStatus = !filters.status || v.availabilityStatus === filters.status;
@@ -227,6 +236,19 @@ export default function VehicleList() {
                 Delete
               </Button>
             </Popconfirm>
+          )}
+
+          {hasRole('CUSTOMER') && (
+            <Button 
+              type="primary" 
+              size="small"
+              onClick={() => {
+                setSelectedVehicleForBooking(record.vehicleId);
+                setBookingFormOpen(true);
+              }}
+            >
+              Book Now
+            </Button>
           )}
           </Space>
         ),
@@ -386,6 +408,21 @@ export default function VehicleList() {
                     <span>Deposit:</span> <span className="font-medium text-gray-700">LKR {record.advanceDeposit?.toLocaleString() || '0'}</span>
                   </div>
                 </div>
+
+                {/* Show Book Now button for Customers */}
+                {hasRole('CUSTOMER') && (
+                  <Button 
+                    type="primary" 
+                    block 
+                    className="mt-2 text-white font-semibold"
+                    onClick={() => {
+                      setSelectedVehicleForBooking(record.vehicleId);
+                      setBookingFormOpen(true);
+                    }}
+                  >
+                    Book Now
+                  </Button>
+                )}
                 </Card>
               </Col>
             ))}
@@ -404,6 +441,18 @@ export default function VehicleList() {
         onClose={() => setFormOpen(false)}
         onSaved={load}
         vehicle={editing}
+      />
+
+      <BookingForm
+        open={bookingFormOpen}
+        onClose={() => {
+          setBookingFormOpen(false);
+          setSelectedVehicleForBooking(null);
+        }}
+        onSaved={() => {
+          navigate('/bookings'); // Redirect directly to bookings list so they can see it or pay
+        }}
+        initialVehicleId={selectedVehicleForBooking}
       />
     </div>
   );
