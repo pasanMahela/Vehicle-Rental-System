@@ -15,3 +15,11 @@ access-control:
 booking:
   service:
     url: ${BOOKING_SERVICE_URL:http://localhost:8083}
+
+# OpenAPI/Swagger Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
