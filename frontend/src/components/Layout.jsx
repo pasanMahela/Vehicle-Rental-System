@@ -459,7 +459,7 @@ export default function Layout() {
             trigger="click"
             open={popoverOpen}
             onOpenChange={setPopoverOpen}
-            placement="bottomRight"
+            placement="bottom"
             arrow={false}
             overlayInnerStyle={{ 
               padding: 0, 
