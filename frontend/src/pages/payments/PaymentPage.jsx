@@ -18,11 +18,12 @@ import { jsPDF } from 'jspdf';
 import { getBookingById } from '../../api/bookingApi';
 import { getVehicleById } from '../../api/vehicleApi';
 import { createPaymentIntent, confirmPayment } from '../../api/paymentApi';
+import { useAuth } from '../../context/AuthContext';
 
 const STRIPE_PUBLISHABLE_KEY =
   'pk_test_51RIMlrGfArS0mgfQgo6gWkSf9e9gWt0fMZa6VKbcbJoPb7FnkTLwYNCooWjwHq0NTLeAzVv7XfZj80lthawtePEh00xqFozasx';
 
-function PaymentForm({ booking, vehicle, onSuccess, onReturnToBookings }) {
+function PaymentForm({ booking, vehicle, onSuccess, onReturnToBookings, onCancel, isStaff }) {
   const stripe = useStripe();
   const elements = useElements();
   const { message } = App.useApp();
@@ -31,6 +32,8 @@ function PaymentForm({ booking, vehicle, onSuccess, onReturnToBookings }) {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [transactionId, setTransactionId] = useState(null);
   const [paymentDate, setPaymentDate] = useState(null);
+  const [cardComplete, setCardComplete] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' or 'cash'
 
   const amount = booking?.remainingBalance ?? booking?.totalAmount ?? 0;
 
@@ -46,6 +49,8 @@ function PaymentForm({ booking, vehicle, onSuccess, onReturnToBookings }) {
         amount,
         bookingId: booking.bookingId,
         currency: 'lkr',
+        paymentType: 'RENTAL_BALANCE',
+        stage: 'FINAL',
       });
 
       setCurrentStep(2);
@@ -268,7 +273,7 @@ function PaymentForm({ booking, vehicle, onSuccess, onReturnToBookings }) {
               border: 'none'
             }}
           >
-            Return to Bookings
+            Return to Payments
           </Button>
         </div>
       </div>
@@ -277,26 +282,74 @@ function PaymentForm({ booking, vehicle, onSuccess, onReturnToBookings }) {
 
   return (
     <div className="space-y-6">
-      <Steps
-        current={currentStep}
-        size="small"
-        items={[
-          { title: 'Enter Card', icon: <CreditCardOutlined /> },
-          { title: 'Processing', icon: <SafetyCertificateOutlined /> },
-          { title: 'Verifying', icon: <LockOutlined /> },
-          { title: 'Complete', icon: <CheckCircleOutlined /> },
-        ]}
-      />
-
-      <form onSubmit={handleSubmit} className="space-y-6 mt-8">
+      {/* Payment Method Selection - Cash only available for staff */}
+      {isStaff && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Card Details
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Payment Method
           </label>
-          <div className="rounded-xl border-2 border-gray-200 bg-white p-4 transition-all focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50">
-            <CardElement
-              options={{
-                hidePostalCode: true,
+          <div className="grid grid-cols-2 gap-4">
+            <div
+              onClick={() => setPaymentMethod('card')}
+              className={`cursor-pointer rounded-xl border-2 p-4 transition-all ${
+                paymentMethod === 'card'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <CreditCardOutlined className={`text-2xl ${paymentMethod === 'card' ? 'text-blue-500' : 'text-gray-400'}`} />
+                <div>
+                  <p className={`font-medium ${paymentMethod === 'card' ? 'text-blue-700' : 'text-gray-700'}`}>Card Payment</p>
+                  <p className="text-xs text-gray-500">Visa, Mastercard, etc.</p>
+                </div>
+              </div>
+            </div>
+            <div
+              onClick={() => setPaymentMethod('cash')}
+              className={`cursor-pointer rounded-xl border-2 p-4 transition-all ${
+                paymentMethod === 'cash'
+                  ? 'border-green-500 bg-green-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <DollarOutlined className={`text-2xl ${paymentMethod === 'cash' ? 'text-green-500' : 'text-gray-400'}`} />
+                <div>
+                  <p className={`font-medium ${paymentMethod === 'cash' ? 'text-green-700' : 'text-gray-700'}`}>Cash Payment</p>
+                  <p className="text-xs text-gray-500">Pay at counter (Staff only)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {paymentMethod === 'card' && (
+        <>
+          <Steps
+            current={currentStep}
+            size="small"
+            items={[
+              { title: 'Enter Card', icon: <CreditCardOutlined /> },
+              { title: 'Processing', icon: <SafetyCertificateOutlined /> },
+              { title: 'Verifying', icon: <LockOutlined /> },
+              { title: 'Complete', icon: <CheckCircleOutlined /> },
+            ]}
+          />
+
+          <form onSubmit={handleSubmit} className="space-y-6 mt-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Card Details
+              </label>
+              <div className={`rounded-xl border-2 bg-white p-4 transition-all ${
+                cardComplete ? 'border-green-500 ring-4 ring-green-50' : 'border-gray-200 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50'
+              }`}>
+                <CardElement
+                  onChange={(e) => setCardComplete(e.complete)}
+                  options={{
+                    hidePostalCode: true,
                 style: {
                   base: {
                     fontSize: '16px',
@@ -321,28 +374,78 @@ function PaymentForm({ booking, vehicle, onSuccess, onReturnToBookings }) {
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded-xl p-4">
-          <p className="text-xs text-gray-500 mb-2">Test Card Number</p>
-          <p className="font-mono text-sm text-gray-700">4242 4242 4242 4242</p>
-          <p className="text-xs text-gray-400 mt-1">Use any future date and any 3-digit CVC</p>
+
+        <div className="flex gap-4">
+          <Button
+            size="large"
+            onClick={onCancel}
+            className="h-14 px-8 rounded-xl"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="primary"
+            htmlType="submit"
+            size="large"
+            loading={loading}
+            disabled={!stripe || amount <= 0 || !cardComplete}
+            className="flex-1 h-14 text-lg font-semibold rounded-xl"
+            style={{ 
+              background: cardComplete && !loading
+                ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)'
+                : '#d1d5db',
+              border: 'none'
+            }}
+          >
+            {loading ? 'Processing...' : `Pay LKR ${amount?.toLocaleString()}`}
+          </Button>
         </div>
 
-        <Button
-          type="primary"
-          htmlType="submit"
-          size="large"
-          loading={loading}
-          disabled={!stripe || amount <= 0}
-          block
-          className="h-14 text-lg font-semibold rounded-xl"
-          style={{ 
-            background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
-            border: 'none'
-          }}
-        >
-          {loading ? 'Processing...' : `Pay LKR ${amount?.toLocaleString()}`}
-        </Button>
-      </form>
+        {!cardComplete && (
+          <p className="text-center text-sm text-amber-600">
+            Please enter valid card details to continue
+          </p>
+        )}
+          </form>
+        </>
+      )}
+
+      {paymentMethod === 'cash' && (
+        <div className="space-y-6 mt-6">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
+            <DollarOutlined className="text-4xl text-amber-500 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Cash Payment Selected</h3>
+            <p className="text-gray-600 mb-4">
+              Please visit our counter to complete your payment of <strong>LKR {amount?.toLocaleString()}</strong>
+            </p>
+            <p className="text-sm text-amber-700">
+              Booking ID: <span className="font-mono">{booking?.bookingId?.slice(-8).toUpperCase()}</span>
+            </p>
+          </div>
+
+          <div className="flex gap-4">
+            <Button
+              size="large"
+              onClick={onCancel}
+              className="h-14 px-8 rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              size="large"
+              onClick={onReturnToBookings}
+              className="flex-1 h-14 text-lg font-semibold rounded-xl"
+              style={{ 
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                border: 'none'
+              }}
+            >
+              I'll Pay at Counter
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -351,10 +454,12 @@ export default function PaymentPage() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
   const { message } = App.useApp();
+  const { hasRole } = useAuth();
   const [booking, setBooking] = useState(null);
   const [vehicle, setVehicle] = useState(null);
   const [loading, setLoading] = useState(true);
   const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+  const isStaff = hasRole('BOOKING_CASHIER', 'OWNER');
 
   useEffect(() => {
     const load = async () => {
@@ -515,7 +620,9 @@ export default function PaymentPage() {
                   booking={booking}
                   vehicle={vehicle}
                   onSuccess={() => {}}
-                  onReturnToBookings={() => navigate('/dashboard/bookings')}
+                  onReturnToBookings={() => navigate('/dashboard/payments')}
+                  onCancel={() => navigate('/dashboard/payments')}
+                  isStaff={isStaff}
                 />
               </Elements>
             </div>
