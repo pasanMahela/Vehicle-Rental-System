@@ -544,16 +544,75 @@ export default function Layout() {
       </Content>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-6">
-        <div className="max-w-7xl mx-auto px-4 lg:px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-gray-500">
-              <CarOutlined />
-              <span className="font-medium">Orchid Vehicle Rental</span>
+      <footer 
+        style={{ 
+          background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+          color: '#ffffff',
+          padding: '48px 24px 24px'
+        }}
+      >
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          {/* Top Section */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 40, marginBottom: 40 }}>
+            {/* Brand */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 40, height: 40, background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CarOutlined style={{ fontSize: 20, color: '#ffffff' }} />
+                </div>
+                <span style={{ fontSize: 18, fontWeight: 700 }}>Orchid Rentals</span>
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, lineHeight: 1.6, margin: 0 }}>
+                Premium vehicle rental services with a wide selection of cars, bikes, and more. Your journey starts here.
+              </p>
             </div>
-            <Typography.Text type="secondary" className="text-sm">
-              © {new Date().getFullYear()} Orchid Rentals. All rights reserved.
-            </Typography.Text>
+
+            {/* Quick Links */}
+            <div>
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16, color: 'rgba(255,255,255,0.9)' }}>Quick Links</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <Link to="/dashboard" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, textDecoration: 'none' }}>Dashboard</Link>
+                <Link to="/dashboard/vehicles" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, textDecoration: 'none' }}>Vehicles</Link>
+                <Link to="/dashboard/bookings" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, textDecoration: 'none' }}>Bookings</Link>
+                <Link to="/dashboard/payments" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, textDecoration: 'none' }}>Payments</Link>
+              </div>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16, color: 'rgba(255,255,255,0.9)' }}>Support</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>Help Center</span>
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>Contact Us</span>
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>Privacy Policy</span>
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>Terms of Service</span>
+              </div>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16, color: 'rgba(255,255,255,0.9)' }}>Contact</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>support@orchid-rentals.com</span>
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>+94 77 123 4567</span>
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>Colombo, Sri Lanka</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', marginBottom: 24 }} />
+
+          {/* Bottom Section */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
+              © {new Date().getFullYear()} Orchid Vehicle Rental. All rights reserved.
+            </span>
+            <div style={{ display: 'flex', gap: 20 }}>
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'pointer' }}>Privacy</span>
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'pointer' }}>Terms</span>
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'pointer' }}>Cookies</span>
+            </div>
           </div>
         </div>
       </footer>
