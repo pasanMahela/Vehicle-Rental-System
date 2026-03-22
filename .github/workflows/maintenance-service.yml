@@ -2,7 +2,7 @@ name: Maintenance Service CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop, 'feature/**' ]
+    branches: [ main, develop ]
     paths:
       - 'backend/maintenance-service/**'
       - '.github/workflows/maintenance-service.yml'
@@ -10,8 +10,8 @@ on:
     branches: [ main ]
     paths:
       - 'backend/maintenance-service/**'
+  workflow_dispatch:
 
-# Global permissions
 permissions:
   contents: read
   security-events: write
@@ -19,7 +19,7 @@ permissions:
 
 env:
   SERVICE_PATH: backend/maintenance-service
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  ACR_LOGIN_SERVER: orchidacr11.azurecr.io
 
 jobs:
   # Job 1: Build and Test
@@ -30,11 +30,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        # actions/checkout@v4 SHA: 11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
-        # actions/setup-java@v4 SHA: 99b8673ff64fbf99d8d325f52d9a5bdedb8483e9
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -42,55 +40,33 @@ jobs:
 
       - name: Build with Maven
         working-directory: backend
-        run: |
-          echo "Building maintenance-service..."
-          mvn clean package -pl maintenance-service -am -DskipTests -B -e
-        continue-on-error: false
+        run: mvn clean package -pl maintenance-service -am -DskipTests -B
 
-      - name: Run Unit and Integration Tests
+      - name: Run Tests
         working-directory: backend
+        run: mvn test -pl maintenance-service -B
         continue-on-error: true
-        run: |
-          echo "Running tests with test profile..."
-          mvn test -pl maintenance-service -B -Dspring.profiles.active=test
-          echo "TEST RUN SUCCESSFUL"
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        # actions/upload-artifact@v4 SHA: 65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
-        if: always()
-        continue-on-error: true
-        with:
-          name: test-results
-          path: backend/maintenance-service/target/surefire-reports/
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
-        # actions/upload-artifact@v4 SHA: 65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
-        if: success() || failure()
         with:
           name: maintenance-service-jar
           path: backend/maintenance-service/target/*.jar
-          if-no-files-found: warn
 
   # Job 2: Code Quality - SonarCloud
   sonarcloud:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
     needs: build
-    # Run this job always
-    if: always()
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        # actions/checkout@v4 SHA: 11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
-        # actions/setup-java@v4 SHA: 99b8673ff64fbf99d8f325d52f9a5bdedb8483e9
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -98,7 +74,6 @@ jobs:
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
-        # actions/cache@v4 SHA: 0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
@@ -110,13 +85,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          echo "Running SonarCloud analysis..."
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -pl maintenance-service -am \
-            -Dsonar.projectKey=${{ secrets.SONAR_MAINTENANCE_PROJECT_KEY || 'dinith114_Vehicle-Rental-System' }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION || 'dinith114' }} \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -DskipTests || echo "SonarCloud analysis failed but continuing..."
+          if [ -n "$SONAR_TOKEN" ]; then
+            mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+              -pl maintenance-service -am \
+              -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY || 'dinith114_Vehicle-Rental-System' }} \
+              -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION || 'dinith114' }} \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -DskipTests
+          else
+            echo "SONAR_TOKEN not set, skipping SonarCloud analysis"
+          fi
         continue-on-error: true
 
   # Job 3: Security Scan - Snyk
@@ -124,29 +102,20 @@ jobs:
     name: Snyk Security Scan
     runs-on: ubuntu-latest
     needs: build
-    # Run this job always
-    if: always()
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        # actions/checkout@v4 SHA: 11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
-        # actions/setup-java@v4 SHA: 99b8673ff64fbf99d8f325d52f9a5bdedb8483e9
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
 
-      - name: Build project for Snyk
-        working-directory: backend
-        run: mvn clean package -pl maintenance-service -am -DskipTests -B
-
       - name: Run Snyk to check for vulnerabilities
-        # Using full commit SHA for security
-        uses: snyk/actions/maven@cdb760004ba9ea4d525f2e043745dfe85bb9077e
+        uses: snyk/actions/maven@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -154,91 +123,72 @@ jobs:
           args: --file=backend/maintenance-service/pom.xml --severity-threshold=high --sarif-file-output=snyk.sarif
 
       - name: Upload Snyk report
-        if: hashFiles('snyk.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        # github/codeql-action/upload-sarif@v3 SHA: 9e8d0789d4a0fa9ceb6b173584bb17fbd541e372
+        uses: github/codeql-action/upload-sarif@v4
         continue-on-error: true
+        if: hashFiles('snyk.sarif') != ''
         with:
           sarif_file: snyk.sarif
 
-  # Job 4: Build and Push Docker Image
+  # Job 4: Build and Push Docker Image to ACR
   docker:
-    name: Build & Push Docker Image
+    name: Build & Push to ACR
     runs-on: ubuntu-latest
     needs: [build, security-scan]
-    # Run on main/develop/feature branch pushes
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature/'))
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        # actions/checkout@v4 SHA: 11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
-        # actions/download-artifact@v4 SHA: 65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
         with:
           name: maintenance-service-jar
           path: backend/maintenance-service/target
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        # docker/setup-buildx-action@v3 SHA: 0d103c3126aa41d772a6c365739d6e2166c0a6c4
 
-      - name: Login to Docker Hub
+      - name: Login to ACR
         uses: docker/login-action@v3
-        # docker/login-action@v3 SHA: 465a07811f14bebb1938fbed4728c6a1ff8901fc
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.MAINTENANCESERVICE_REGISTRY_USERNAME }}
+          password: ${{ secrets.MAINTENANCESERVICE_REGISTRY_PASSWORD }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        # docker/metadata-action@v5 SHA: 902fa8ec7d6ecbf8d84d418b9d6e64b9cfc1f209
-        with:
-          images: ${{ secrets.DOCKER_USERNAME }}/maintenance-service
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix=
-            type=raw,value=latest
-            
-      - name: Build and push Docker image
+      - name: Build and push Docker image to ACR
         uses: docker/build-push-action@v5
-        # docker/build-push-action@v5 SHA: 1cb9d22d5b1f7db35b6cbc91f6a81c6376c9fcf3
         with:
           context: ./backend/maintenance-service
           file: ./backend/maintenance-service/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/maintenance-service:latest
+            ${{ env.ACR_LOGIN_SERVER }}/maintenance-service:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   # Job 5: Deploy to Azure Container Apps
   deploy:
-    name: Deploy to Azure
+    name: Deploy to Azure Container Apps
     runs-on: ubuntu-latest
     needs: docker
-    # Only run on main/develop branch pushes (not feature branches)
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    environment: production
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
-      - name: Login to Azure
-        id: azure-login
+      - name: Azure Login
         uses: azure/login@v2
-        # azure/login@v2 SHA: 7ca4acbf6da6d7b218c65dbe9acd9a1e5af9b160
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-        continue-on-error: true
+          client-id: ${{ secrets.MAINTENANCESERVICE_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.MAINTENANCESERVICE_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.MAINTENANCESERVICE_AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy to Azure Container Apps
-        if: steps.azure-login.outcome == 'success'
-        uses: azure/container-apps-deploy-action@v2
-        # azure/container-apps-deploy-action@v2 SHA: 17d9a08d7bb2ed9e2d5b4e94d653f273a31a5c7e
-        with:
-          acrName: ${{ secrets.ACR_NAME }}
-          containerAppName: maintenance-service
-          resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          imageToDeploy: ${{ secrets.DOCKER_USERNAME }}/maintenance-service:latest
+      - name: Update Container App image
+        run: |
+          az containerapp update \
+            --name maintenance-service \
+            --resource-group orchid-rental-rg \
+            --image "${{ env.ACR_LOGIN_SERVER }}/maintenance-service:${{ github.sha }}"
