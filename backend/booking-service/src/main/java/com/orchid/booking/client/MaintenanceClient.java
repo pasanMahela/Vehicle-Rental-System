@@ -12,11 +12,14 @@ import java.util.Map;
 public class MaintenanceClient {
 
     private final WebClient webClient;
+   private final RequestAuthHeaderProvider authHeaderProvider;
 
-    public MaintenanceClient(@Value("${maintenance.service.url}") String maintenanceServiceUrl) {
+   public MaintenanceClient(@Value("${maintenance.service.url}") String maintenanceServiceUrl,
+                            RequestAuthHeaderProvider authHeaderProvider) {
         this.webClient = WebClient.builder()
                 .baseUrl(maintenanceServiceUrl)
                 .build();
+       this.authHeaderProvider = authHeaderProvider;
     }
 
     @SuppressWarnings("unchecked")
@@ -28,7 +31,13 @@ public class MaintenanceClient {
                     "customerId", customerId
             );
             return webClient.post()
-                    .uri("/api/maintenance/inspect")
+                   .uri("/api/maintenance/issues/report")
+                   .headers(headers -> {
+                       String authorization = authHeaderProvider.getAuthorizationHeader();
+                       if (authorization != null && !authorization.isBlank()) {
+                           headers.set("Authorization", authorization);
+                       }
+                   })
                     .bodyValue(inspectionRequest)
                     .retrieve()
                     .bodyToMono(Map.class)
