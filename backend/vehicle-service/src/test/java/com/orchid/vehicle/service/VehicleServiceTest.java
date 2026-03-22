@@ -26,6 +26,9 @@ class VehicleServiceTest {
     @Mock
     private BookingClient bookingClient;
 
+    @Mock
+    private com.orchid.vehicle.client.NotificationClient notificationClient;
+
     @InjectMocks
     private VehicleService vehicleService;
 
