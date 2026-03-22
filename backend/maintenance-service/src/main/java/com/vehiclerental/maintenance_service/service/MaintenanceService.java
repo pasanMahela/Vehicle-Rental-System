@@ -11,6 +11,7 @@ public interface MaintenanceService {
     // Issue reporting
     ReportedIssue reportIssue(ReportedIssue issue, String userId, String role, String username);
     List<ReportedIssue> getVehicleIssues(String vehicleId);
+    List<ReportedIssue> getAllIssues();
     ReportedIssue getIssueById(String issueId);
     
     // Schedule maintenance from issue

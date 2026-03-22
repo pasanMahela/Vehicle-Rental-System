@@ -1,0 +1,6 @@
+RG=vrs-rg-106240
+LOCATION=southeastasia
+ACR=vrsacr106240
+ENV=vrscaenv106240
+APP=maintsvc106240
+PUBLIC_URL=https://

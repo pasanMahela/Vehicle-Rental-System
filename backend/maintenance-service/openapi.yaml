@@ -12,11 +12,11 @@ info:
     - Role-based access control
     
     ## Authentication
-    Uses header-based role authentication:
+    Postman usage is through API Gateway with Bearer JWT in `Authorization`.
+    The gateway/JWT filter can propagate these optional headers to this service:
     - `X-User-Role`: User role (CUSTOMER, REPAIR_ADVISOR, OWNER)
     - `X-User-Id`: User identifier
     - `X-Username`: Username of the user
-    - `Authorization`: JWT Bearer token
     
     ## Inter-service Communication
     - **Vehicle Service**: Validates vehicle existence and updates status
@@ -33,12 +33,17 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
+  - url: http://localhost:8080
+    description: Local API Gateway URL (recommended for Postman testing)
   - url: http://localhost:8085
     description: Local Development Server
   - url: http://api-gateway:8080
     description: API Gateway (Via Gateway)
   - url: https://maintenance-service.azurecontainerapps.io
     description: Production Server (Azure Container Apps)
+
+security:
+  - bearerAuth: []
 
 tags:
   - name: Issue Reporting
@@ -113,14 +118,14 @@ paths:
         '404':
           description: Vehicle not found
 
-  /api/maintenance/issues/{issueId}:
+  /api/maintenance/issues/{id}:
     get:
       tags:
         - Issue Reporting
       summary: Get issue details
       description: Retrieves detailed information about a specific maintenance issue.
       parameters:
-        - name: issueId
+        - name: id
           in: path
           required: true
           schema:
@@ -133,8 +138,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReportedIssue'
-        '404':
-          description: Issue not found
+        '400':
+          description: Invalid request (including issue not found)
 
     delete:
       tags:
@@ -142,7 +147,7 @@ paths:
       summary: Delete issue
       description: Deletes a reported issue by ID. Restricted to maintenance management roles.
       parameters:
-        - name: issueId
+        - name: id
           in: path
           required: true
           schema:
@@ -162,6 +167,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
 
   /api/maintenance/schedule-from-issue/{issueId}:
     post:
@@ -192,8 +199,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MaintenanceRecord'
-        '404':
-          description: Issue not found
+        '400':
+          description: Invalid request (including issue not found)
         '403':
           description: Access denied - only REPAIR_ADVISOR can schedule
 
@@ -286,11 +293,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/MaintenanceRecord'
         '400':
-          description: Invalid request
+          description: Invalid request (including record not found)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
 
   /api/maintenance/{id}/complete:
     put:
@@ -319,11 +328,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/MaintenanceRecord'
         '400':
-          description: Invalid request
+          description: Invalid request (including record not found)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
 
   /api/maintenance/{id}/status:
     put:
@@ -352,11 +363,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/MaintenanceRecord'
         '400':
-          description: Invalid request
+          description: Invalid request (including record not found)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
 
   /api/maintenance/history/vehicle/{vehicleId}:
     get:
@@ -465,6 +478,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   parameters:
     XUserRole:
       name: X-User-Role

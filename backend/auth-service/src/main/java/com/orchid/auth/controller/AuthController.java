@@ -79,6 +79,14 @@ public class AuthController {
         return ResponseEntity.ok(authService.updateUserRole(userId, body.get("role")));
     }
 
+    @PutMapping("/users/{userId}")
+    public ResponseEntity<UserResponse> updateUser(@PathVariable String userId,
+                                                    @RequestBody Map<String, String> body,
+                                                    @RequestHeader(value = "X-User-Role", required = false) String role) {
+        validateRole(role, "User update");
+        return ResponseEntity.ok(authService.updateUser(userId, body.get("email"), body.get("username")));
+    }
+
     @DeleteMapping("/users/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable String userId,
                                             @RequestHeader(value = "X-User-Role", required = false) String role) {

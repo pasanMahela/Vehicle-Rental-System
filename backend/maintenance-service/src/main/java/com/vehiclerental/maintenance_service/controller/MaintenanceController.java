@@ -17,7 +17,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/maintenance")
-@CrossOrigin
 @Tag(name = "Maintenance Service", description = "API for maintenance and issue management")
 public class MaintenanceController {
     
@@ -51,6 +50,13 @@ public class MaintenanceController {
     @ApiResponse(responseCode = "200", description = "List of issues retrieved")
     public List<ReportedIssue> getVehicleIssues(@PathVariable String vehicleId) {
         return service.getVehicleIssues(vehicleId);
+    }
+
+    @GetMapping("/issues/all")
+    @Operation(summary = "Get all reported issues", description = "Retrieves all reported maintenance issues")
+    @ApiResponse(responseCode = "200", description = "List of all reported issues")
+    public List<ReportedIssue> getAllIssues() {
+        return service.getAllIssues();
     }
 
     @GetMapping("/issues/{issueId}")

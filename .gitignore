@@ -30,3 +30,13 @@ test_azure_apis.cmd
 # AI Assistant Global Rules
 .cursorrules
 .windsurfrules
+PAYMENT_INTEGRATION_REPORT.md
+
+# Session progress/documentation files (local only, not for git)
+*_PROGRESS.md
+PAYMENT_SERVICE_LOG.md
+PAYMENT_AZURE_CICD_PROGRESS.md
+DEPLOYMENT_FIXES.md
+
+# Cursor rules (local IDE configuration)
+.cursor/

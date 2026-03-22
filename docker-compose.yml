@@ -40,8 +40,8 @@ services:
       context: ./backend
       dockerfile: auth-service/Dockerfile
     container_name: auth-service
-    ports:
-      - "8081:8081"
+    expose:
+      - "8081"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/auth-db
       - JWT_SECRET=OrchidVehicleRentalSecretKeyForJWTTokenGeneration2024SecureKey
@@ -55,11 +55,11 @@ services:
       context: ./backend
       dockerfile: vehicle-service/Dockerfile
     container_name: vehicle-service
-    ports:
-      - "8082:8082"
+    expose:
+      - "8082"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb+srv://dinith114:dinith114@cluster0.jaljain.mongodb.net/vehicle-db?retryWrites=true&w=majority&appName=Cluster0
-      - BOOKING_SERVICE_URL=http://api-gateway:8087
+      - BOOKING_SERVICE_URL=http://api-gateway:8080
     dns:
       - 8.8.8.8
       - 1.1.1.1
@@ -73,14 +73,17 @@ services:
       context: ./backend
       dockerfile: booking-service/Dockerfile
     container_name: booking-service
-    ports:
-      - "8083:8083"
+    expose:
+      - "8083"
     environment:
-      - SPRING_DATA_MONGODB_URI=mongodb+srv://jayangi:dmjprLC1818@cluster0.g4inw.mongodb.net/vehicle-db?retryWrites=true&w=majority&authSource=admin
-      - VEHICLE_SERVICE_URL=http://api-gateway:8087
-      - PAYMENT_SERVICE_URL=http://api-gateway:8087
-      - NOTIFICATION_SERVICE_URL=http://api-gateway:8087
-      - MAINTENANCE_SERVICE_URL=http://api-gateway:8087
+      - SPRING_DATA_MONGODB_URI=mongodb+srv://jayangi:dmjprLC1818@cluster0.g4inw.mongodb.net/Booking_Vehicles?retryWrites=true&w=majority&authSource=admin
+      - VEHICLE_SERVICE_URL=http://api-gateway:8080
+      - PAYMENT_SERVICE_URL=http://api-gateway:8080
+      - NOTIFICATION_SERVICE_URL=http://api-gateway:8080
+      - MAINTENANCE_SERVICE_URL=http://api-gateway:8080
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     depends_on:
       - mongodb
     networks:
@@ -88,20 +91,21 @@ services:
 
   payment-service:
     build:
-      context: ./backend/payment-service
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: payment-service/Dockerfile
     container_name: payment-service
-    ports:
-      - "8084:8084"
+    expose:
+      - "8084"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb+srv://admin:1234@rental.z6qzg6i.mongodb.net/payment-db?retryWrites=true&w=majority&appName=rental
       - BOOKING_SERVICE_URL=${API_GATEWAY_URL}
       - NOTIFICATION_SERVICE_URL=${API_GATEWAY_URL}
+      - VEHICLE_SERVICE_URL=${API_GATEWAY_URL}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
     dns:
       - 8.8.8.8
-      - 8.8.4.4
+      - 1.1.1.1
     networks:
       - orchid-network
 
@@ -130,8 +134,8 @@ services:
       context: ./backend
       dockerfile: notification-service/Dockerfile
     container_name: notification-service
-    ports:
-      - "8086:8086"
+    expose:
+      - "8086"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/notification-db
       - SPRING_MAIL_HOST=smtp.gmail.com

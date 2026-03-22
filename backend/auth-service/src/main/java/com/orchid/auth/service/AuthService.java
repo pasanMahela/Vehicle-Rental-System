@@ -154,6 +154,24 @@ public class AuthService {
         return toUserResponse(savedUser);
     }
 
+    public UserResponse updateUser(String userId, String email, String username) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (email != null && !email.isBlank()) {
+            user.setEmail(email);
+        }
+        if (username != null && !username.isBlank()) {
+            if (!username.equals(user.getUsername()) && userRepository.existsByUsername(username)) {
+                throw new RuntimeException("Username already exists");
+            }
+            user.setUsername(username);
+        }
+
+        User savedUser = userRepository.save(user);
+        return toUserResponse(savedUser);
+    }
+
     public void deleteUser(String userId) {
         if (!userRepository.existsById(userId)) {
             throw new RuntimeException("User not found");

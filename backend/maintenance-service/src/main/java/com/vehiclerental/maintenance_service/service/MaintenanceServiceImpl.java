@@ -88,6 +88,11 @@ public class MaintenanceServiceImpl implements MaintenanceService {
     }
 
     @Override
+    public List<ReportedIssue> getAllIssues() {
+        return issueRepository.findAll();
+    }
+
+    @Override
     public ReportedIssue getIssueById(String issueId) {
         return issueRepository.findById(issueId)
                 .orElseThrow(() -> new RuntimeException("Issue not found with id: " + issueId));
@@ -111,7 +116,13 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         
         MaintenanceRecord savedRecord = maintenanceRepository.save(record);
 
-        vehicleClient.updateVehicleStatus(savedRecord.getVehicleId(), "MAINTENANCE");
+        try {
+            vehicleClient.updateVehicleStatus(savedRecord.getVehicleId(), "MAINTENANCE");
+            log.info("Vehicle {} status updated to MAINTENANCE after scheduling", savedRecord.getVehicleId());
+        } catch (Exception e) {
+            log.error("Failed to update vehicle status to MAINTENANCE for vehicle {}: {}", savedRecord.getVehicleId(), e.getMessage());
+            // Don't fail the maintenance scheduling if vehicle status update fails
+        }
         
         issue.setMaintenanceRecordId(savedRecord.getId());
         issue.setStatus("SCHEDULED");
@@ -122,6 +133,11 @@ public class MaintenanceServiceImpl implements MaintenanceService {
 
     @Override
     public MaintenanceRecord createScheduledMaintenance(MaintenanceRecord record) {
+        // Validate vehicle exists before creating maintenance record
+        if (!vehicleClient.vehicleExists(record.getVehicleId())) {
+            throw new RuntimeException("Vehicle not found with id: " + record.getVehicleId());
+        }
+        
         record.setStatus("SCHEDULED");
         record.setIsRecurring(true);
         record.setCreatedAt(LocalDateTime.now());

@@ -10,6 +10,7 @@ on:
     branches: [ main ]
     paths:
       - 'backend/vehicle-service/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,6 +19,7 @@ permissions:
 
 env:
   SERVICE_PATH: backend/vehicle-service
+  ACR_LOGIN_SERVER: orchidacr11.azurecr.io
 
 jobs:
   # Job 1: Build and Test
@@ -43,7 +45,6 @@ jobs:
       - name: Run Tests
         working-directory: backend
         run: mvn test -pl vehicle-service -B
-        continue-on-error: true
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
@@ -150,9 +151,9 @@ jobs:
       - name: Login to ACR
         uses: docker/login-action@v3
         with:
-          registry: ${{ secrets.ACR_LOGIN_SERVER }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.VEHICLESERVICE_REGISTRY_USERNAME }}
+          password: ${{ secrets.VEHICLESERVICE_REGISTRY_PASSWORD }}
 
       - name: Build and push Docker image to ACR
         uses: docker/build-push-action@v5
@@ -161,37 +162,32 @@ jobs:
           file: ./backend/vehicle-service/Dockerfile
           push: true
           tags: |
-            ${{ secrets.ACR_LOGIN_SERVER }}/vehicle-service:latest
-            ${{ secrets.ACR_LOGIN_SERVER }}/vehicle-service:${{ github.sha }}
+            ${{ env.ACR_LOGIN_SERVER }}/vehicle-service:latest
+            ${{ env.ACR_LOGIN_SERVER }}/vehicle-service:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   # Job 5: Deploy to Azure Container Apps
   deploy:
-    name: Deploy to Azure
+    name: Deploy to Azure Container Apps
     runs-on: ubuntu-latest
     needs: docker
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.VEHICLESERVICE_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.VEHICLESERVICE_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.VEHICLESERVICE_AZURE_SUBSCRIPTION_ID }}
+
       - name: Update Container App image
-        env:
-          ACR_USER: ${{ secrets.ACR_USERNAME }}
-          ACR_PASS: ${{ secrets.ACR_PASSWORD }}
-          TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          ACR_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-          COMMIT_SHA: ${{ github.sha }}
         run: |
-          az login --service-principal \
-            -u "$ACR_USER" \
-            -p "$ACR_PASS" \
-            --tenant "$TENANT_ID" || true
-          
-          # Update the container app with new image
           az containerapp update \
             --name vehicle-service \
-            --resource-group "$RESOURCE_GROUP" \
-            --image "$ACR_SERVER/vehicle-service:$COMMIT_SHA" \
-            2>/dev/null || echo "Auto-deploy skipped - manual deploy available"
-        continue-on-error: true
+            --resource-group orchid-rental-rg \
+            --image "${{ env.ACR_LOGIN_SERVER }}/vehicle-service:${{ github.sha }}"
