@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Button, Spin, App, Divider, Tag, Steps } from 'antd';
 import { 
   CreditCardOutlined, 
@@ -23,7 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 const STRIPE_PUBLISHABLE_KEY =
   'pk_test_51RIMlrGfArS0mgfQgo6gWkSf9e9gWt0fMZa6VKbcbJoPb7FnkTLwYNCooWjwHq0NTLeAzVv7XfZj80lthawtePEh00xqFozasx';
 
-function PaymentForm({ booking, vehicle, onSuccess, onReturnToBookings, onCancel, isStaff }) {
+function PaymentForm({ booking, vehicle, onSuccess, onReturnToBookings, onCancel, isStaff, paymentAmount, paymentTypeForApi, stageForApi, paymentTypeLabel }) {
   const stripe = useStripe();
   const elements = useElements();
   const { message } = App.useApp();
@@ -35,7 +35,7 @@ function PaymentForm({ booking, vehicle, onSuccess, onReturnToBookings, onCancel
   const [cardComplete, setCardComplete] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' or 'cash'
 
-  const amount = booking?.remainingBalance ?? booking?.totalAmount ?? 0;
+  const amount = paymentAmount ?? booking?.remainingBalance ?? booking?.totalAmount ?? 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,9 +48,10 @@ function PaymentForm({ booking, vehicle, onSuccess, onReturnToBookings, onCancel
       const { data: intentData } = await createPaymentIntent({
         amount,
         bookingId: booking.bookingId,
+        customerId: booking.customerId || booking.userId,
         currency: 'lkr',
-        paymentType: 'RENTAL_BALANCE',
-        stage: 'FINAL',
+        paymentType: paymentTypeForApi || 'RENTAL_BALANCE',
+        stage: stageForApi || 'FINAL',
       });
 
       setCurrentStep(2);
@@ -452,6 +453,7 @@ function PaymentForm({ booking, vehicle, onSuccess, onReturnToBookings, onCancel
 
 export default function PaymentPage() {
   const { bookingId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { message } = App.useApp();
   const { hasRole } = useAuth();
@@ -460,6 +462,9 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
   const isStaff = hasRole('BOOKING_CASHIER', 'OWNER');
+  
+  // Determine payment type from URL: FULL_PAYMENT, ADVANCE_DEPOSIT, or RENTAL_BALANCE (for "Pay Remaining")
+  const paymentTypeParam = searchParams.get('type') || 'RENTAL_BALANCE';
 
   useEffect(() => {
     const load = async () => {
@@ -501,9 +506,37 @@ export default function PaymentPage() {
     return null;
   }
 
-  const remainingBalance = booking.remainingBalance ?? 0;
   const totalAmount = booking.totalAmount ?? 0;
-  const advancePaid = booking.advancePaid ?? 0;
+  const advanceDeposit = booking.advancePaid ?? 0; // The deposit amount required
+  const remainingBalanceFromBooking = booking.remainingBalance ?? 0;
+  
+  // Determine the amount to pay based on payment type
+  let paymentAmount = 0;
+  let paymentTypeLabel = '';
+  let paymentTypeForApi = 'RENTAL_BALANCE';
+  let stageForApi = 'FINAL';
+  
+  if (paymentTypeParam === 'FULL_PAYMENT') {
+    paymentAmount = totalAmount;
+    paymentTypeLabel = 'Full Payment';
+    paymentTypeForApi = 'FULL_PAYMENT';
+    stageForApi = 'FULL';
+  } else if (paymentTypeParam === 'ADVANCE_DEPOSIT') {
+    paymentAmount = advanceDeposit;
+    paymentTypeLabel = 'Advance Deposit';
+    paymentTypeForApi = 'ADVANCE_DEPOSIT';
+    stageForApi = 'ADVANCE';
+  } else {
+    // RENTAL_BALANCE - Pay remaining
+    paymentAmount = remainingBalanceFromBooking;
+    paymentTypeLabel = 'Remaining Balance';
+    paymentTypeForApi = 'RENTAL_BALANCE';
+    stageForApi = 'FINAL';
+  }
+  
+  // For display purposes
+  const advancePaid = paymentTypeParam === 'RENTAL_BALANCE' ? advanceDeposit : 0;
+  const remainingBalance = paymentAmount;
   const startDate = booking.startDate ? new Date(booking.startDate) : null;
   const endDate = booking.endDate ? new Date(booking.endDate) : null;
   const rentalDays = startDate && endDate 
@@ -571,17 +604,37 @@ export default function PaymentPage() {
                   <span>Total Rental</span>
                   <span>LKR {totalAmount.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Advance Paid</span>
-                  <span className="text-green-600">- LKR {advancePaid.toLocaleString()}</span>
-                </div>
+                {paymentTypeParam === 'RENTAL_BALANCE' && advancePaid > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Advance Paid</span>
+                    <span className="text-green-600">- LKR {advancePaid.toLocaleString()}</span>
+                  </div>
+                )}
+                {paymentTypeParam === 'ADVANCE_DEPOSIT' && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Deposit Required</span>
+                    <span className="text-orange-500">LKR {advanceDeposit.toLocaleString()}</span>
+                  </div>
+                )}
+                {paymentTypeParam === 'FULL_PAYMENT' && (
+                  <div className="flex justify-between text-gray-500 text-sm">
+                    <span>Payment Type</span>
+                    <span className="text-green-600">Full Payment</span>
+                  </div>
+                )}
                 <Divider className="my-3" />
                 <div className="flex justify-between">
-                  <span className="font-semibold text-gray-900">Amount Due</span>
+                  <span className="font-semibold text-gray-900">{paymentTypeLabel}</span>
                   <span className="text-2xl font-bold text-blue-600">
-                    LKR {remainingBalance.toLocaleString()}
+                    LKR {paymentAmount.toLocaleString()}
                   </span>
                 </div>
+                {paymentTypeParam === 'ADVANCE_DEPOSIT' && remainingBalanceFromBooking > 0 && (
+                  <div className="flex justify-between text-gray-500 text-sm mt-2">
+                    <span>Remaining (Pay Later)</span>
+                    <span>LKR {remainingBalanceFromBooking.toLocaleString()}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -623,6 +676,10 @@ export default function PaymentPage() {
                   onReturnToBookings={() => navigate('/dashboard/payments')}
                   onCancel={() => navigate('/dashboard/payments')}
                   isStaff={isStaff}
+                  paymentAmount={paymentAmount}
+                  paymentTypeForApi={paymentTypeForApi}
+                  stageForApi={stageForApi}
+                  paymentTypeLabel={paymentTypeLabel}
                 />
               </Elements>
             </div>

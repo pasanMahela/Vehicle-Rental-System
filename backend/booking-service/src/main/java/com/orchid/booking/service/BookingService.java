@@ -61,8 +61,9 @@ public class BookingService {
 
         vehicleClient.updateVehicleStatus(dto.getVehicleId(), "BOOKED");
 
-        paymentClient.createPayment(saved.getBookingId(), saved.getCustomerId(),
-                advanceDeposit, "ADVANCE_DEPOSIT", saved.getCustomerEmail());
+        // Payment is now created by frontend via PaymentPage after booking confirmation
+        // paymentClient.createPayment(saved.getBookingId(), saved.getCustomerId(),
+        //         advanceDeposit, "ADVANCE_DEPOSIT", saved.getCustomerEmail());
 
         String vehicleName = vehicle.get("brand") + " " + vehicle.get("model");
         String message = String.format(
