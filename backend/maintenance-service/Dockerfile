@@ -1,12 +1,12 @@
-FROM eclipse-temurin:21-jdk-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 # Security: Run as non-root user
 RUN addgroup -S spring && adduser -S spring -G spring
 
 WORKDIR /app
 
-# Copy the pre-built JAR file (using wildcard to match any version)
-COPY target/maintenance-service-*.jar app.jar
+# Copy the executable Spring Boot jar (avoid matching *.jar.original)
+COPY target/maintenance-service-0.0.1-SNAPSHOT.jar app.jar
 
 # Change ownership to non-root user
 RUN chown -R spring:spring /app

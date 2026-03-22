@@ -1,22 +1,25 @@
 import { useEffect } from 'react';
-import { Form, Input, Select, InputNumber, Modal } from 'antd';
-import { recordDamage } from '../../api/maintenanceApi';
+import { Form, Input, Select, Modal } from 'antd';
+import { reportIssue } from '../../api/maintenanceApi';
 import { App } from 'antd';
 
-const DAMAGE_TYPES = [
-  { value: 'SCRATCH', label: 'Scratch' },
-  { value: 'ENGINE', label: 'Engine' },
-  { value: 'TIRE', label: 'Tire' },
-  { value: 'INTERIOR', label: 'Interior' },
+const ISSUE_TYPES = [
+  { value: 'ENGINE_PROBLEM', label: 'Engine Problem' },
+  { value: 'TIRE_ISSUE', label: 'Tire Issue' },
+  { value: 'BRAKE_ISSUE', label: 'Brake Issue' },
+  { value: 'ELECTRICAL', label: 'Electrical' },
+  { value: 'SUSPENSION', label: 'Suspension' },
+  { value: 'ACCIDENT_DAMAGE', label: 'Accident Damage' },
+  { value: 'BODY_DAMAGE', label: 'Body Damage' },
+  { value: 'INTERIOR_DAMAGE', label: 'Interior Damage' },
+  { value: 'OTHER', label: 'Other' },
 ];
 
 export default function DamageForm({
   open,
   onClose,
   onSaved,
-  inspectionId,
   vehicleId,
-  bookingId,
 }) {
   const [form] = Form.useForm();
   const { message } = App.useApp();
@@ -25,73 +28,75 @@ export default function DamageForm({
     if (open) {
       form.resetFields();
       form.setFieldsValue({
-        damageType: undefined,
+        vehicleId: vehicleId || '',
+        issueType: undefined,
         description: '',
-        estimatedCost: undefined,
       });
     }
-  }, [open, form]);
+  }, [open, vehicleId, form]);
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
       const payload = {
-        damageType: values.damageType,
+        vehicleId: values.vehicleId,
+        issueType: values.issueType,
         description: values.description || '',
-        estimatedCost: values.estimatedCost ?? 0,
-        vehicleId,
-        bookingId: bookingId ?? undefined,
+        reportedDate: new Date().toISOString(),
       };
 
-      await recordDamage(inspectionId, payload);
-      message.success('Damage recorded');
+      await reportIssue(payload);
+      message.success('Issue reported successfully');
       onSaved();
     } catch (err) {
       if (err?.errorFields) return;
-      message.error('Failed to record damage');
+      message.error('Failed to report issue');
     }
   };
 
   return (
     <Modal
-      title="Record Damage"
-      open={open && !!inspectionId}
+      title="Report Vehicle Issue"
+      open={open}
       onCancel={onClose}
       onOk={handleSubmit}
-      okText="Record"
+      okText="Report"
       destroyOnClose
       maskClosable={false}
+      width={600}
     >
       <Form form={form} layout="vertical" className="mt-4">
         <Form.Item
-          name="damageType"
-          label="Damage Type"
-          rules={[{ required: true, message: 'Damage type is required' }]}
+          name="vehicleId"
+          label="Vehicle ID"
+          rules={[{ required: true, message: 'Vehicle ID is required' }]}
+        >
+          <Input
+            placeholder="Enter vehicle ID"
+            disabled={!!vehicleId}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="issueType"
+          label="Issue Type"
+          rules={[{ required: true, message: 'Issue type is required' }]}
         >
           <Select
-            placeholder="Select damage type"
-            options={DAMAGE_TYPES}
+            placeholder="Select issue type"
+            options={ISSUE_TYPES}
             allowClear
           />
         </Form.Item>
 
-        <Form.Item name="description" label="Description">
-          <Input.TextArea rows={3} placeholder="Enter damage description" />
-        </Form.Item>
-
         <Form.Item
-          name="estimatedCost"
-          label="Estimated Cost (LKR)"
-          rules={[{ required: true, message: 'Estimated cost is required' }]}
+          name="description"
+          label="Description"
+          rules={[{ required: true, message: 'Description is required' }]}
         >
-          <InputNumber
-            className="w-full"
-            min={0}
-            placeholder="Enter amount in LKR"
-            formatter={(value) =>
-              `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-            }
-            parser={(value) => value?.replace(/\$\s?|(,*)/g, '') ?? 0}
+          <Input.TextArea
+            rows={4}
+            placeholder="Describe the issue in detail"
           />
         </Form.Item>
       </Form>
