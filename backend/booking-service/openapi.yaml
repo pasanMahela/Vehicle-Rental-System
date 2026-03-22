@@ -1,0 +1,284 @@
+openapi: 3.0.3
+info:
+  title: Booking Service API
+  description: |
+    Booking microservice for Orchid Vehicle Rental System.
+    
+    ## Features
+    - Create and manage vehicle rentals
+    - Cancel bookings
+    - Complete bookings
+    - View booking history
+    
+    ## Authentication
+    Uses header-based role authentication:
+    - `X-User-Role`: User role (CUSTOMER, BOOKING_CASHIER, REPAIR_ADVISOR, OWNER)
+    - `X-User-Id`: User identifier
+    - `X-Username`: Username of the user
+    - `Authorization`: JWT Bearer token
+    
+    ## Inter-service Communication
+    - **Vehicle Service**: Retrieves price and updates availability
+    - **Payment Service**: Creates advance payments and refunds
+    - **Notification Service**: Sends confirmation emails
+    - **Maintenance Service**: Notifies when complete
+    
+  version: 1.0.0
+  contact:
+    name: Orchid Vehicle Rental Team
+    email: support@orchid-rental.com
+
+servers:
+  - url: http://localhost:8083
+    description: Local Development Server
+  - url: http://api-gateway:8080
+    description: API Gateway
+  - url: https://booking-service.azurecontainerapps.io
+    description: Cloud Server
+
+tags:
+  - name: Bookings
+    description: Operations related to managing bookings
+
+paths:
+  /api/bookings:
+    post:
+      tags:
+        - Bookings
+      summary: Create a new booking
+      description: |
+        Creates a new vehicle booking. 
+        Will verify vehicle availability, calculate total amount, and trigger an advance payment creation in the Payment service.
+      parameters:
+        - $ref: '#/components/parameters/XUserRole'
+        - $ref: '#/components/parameters/XUserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingDTO'
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid input or missing data
+        '403':
+          description: Access denied
+    
+    get:
+      tags:
+        - Bookings
+      summary: Get all bookings
+      description: |
+        Retrieves bookings. 
+        Customers will only see their own bookings. Cashiers and Owners see all.
+      parameters:
+        - $ref: '#/components/parameters/XUserRole'
+        - $ref: '#/components/parameters/XUserId'
+      responses:
+        '200':
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+
+  /api/bookings/{id}:
+    get:
+      tags:
+        - Bookings
+      summary: Get booking by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/XUserRole'
+        - $ref: '#/components/parameters/XUserId'
+      responses:
+        '200':
+          description: Booking found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '404':
+          description: Booking not found
+          
+    put:
+      tags:
+        - Bookings
+      summary: Update a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/XUserRole'
+        - $ref: '#/components/parameters/XUserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingDTO'
+      responses:
+        '200':
+          description: Booking updated successfully
+
+  /api/bookings/{id}/cancel:
+    put:
+      tags:
+        - Bookings
+      summary: Cancel a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/XUserRole'
+        - $ref: '#/components/parameters/XUserId'
+      responses:
+        '200':
+          description: Booking cancelled
+
+  /api/bookings/{id}/complete:
+    put:
+      tags:
+        - Bookings
+      summary: Complete a booking
+      description: Closes the booking, meaning the rental period is over and the car is returned.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/XUserRole'
+      responses:
+        '200':
+          description: Booking marked as completed
+
+  /api/bookings/customer/{customerId}:
+    get:
+      tags:
+        - Bookings
+      summary: Get bookings by specific customer ID
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/XUserRole'
+        - $ref: '#/components/parameters/XUserId'
+      responses:
+        '200':
+          description: List of the customer's bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+
+  /api/bookings/vehicle-counts:
+    get:
+      tags:
+        - Bookings
+      summary: Get total count of bookings per vehicle
+      description: Used by the vehicle service to calculate popular/trending vehicles.
+      responses:
+        '200':
+          description: Map of Vehicle ID to booking count
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                  format: int64
+
+components:
+  parameters:
+    XUserRole:
+      name: X-User-Role
+      in: header
+      required: false
+      schema:
+        type: string
+        enum: [CUSTOMER, BOOKING_CASHIER, REPAIR_ADVISOR, OWNER]
+      description: User role for authorization
+
+    XUserId:
+      name: X-User-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: User identifier 
+
+  schemas:
+    BookingDTO:
+      type: object
+      required:
+        - vehicleId
+        - startDate
+        - endDate
+      properties:
+        bookingId:
+          type: string
+        vehicleId:
+          type: string
+        customerId:
+          type: string
+        customerEmail:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+
+    Booking:
+      type: object
+      properties:
+        bookingId:
+          type: string
+        vehicleId:
+          type: string
+        customerId:
+          type: string
+        customerEmail:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        totalAmount:
+          type: number
+          format: double
+        advancePaid:
+          type: number
+          format: double
+        remainingBalance:
+          type: number
+          format: double
+        finalPaymentDone:
+          type: boolean
+        status:
+          type: string
+          enum: [PENDING, CONFIRMED, CANCELLED, COMPLETED]

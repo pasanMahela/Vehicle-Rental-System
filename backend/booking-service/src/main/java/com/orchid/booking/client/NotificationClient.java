@@ -12,17 +12,26 @@ import java.util.Map;
 public class NotificationClient {
 
     private final WebClient webClient;
+   private final RequestAuthHeaderProvider authHeaderProvider;
 
-    public NotificationClient(@Value("${notification.service.url}") String notificationServiceUrl) {
+   public NotificationClient(@Value("${notification.service.url}") String notificationServiceUrl,
+                             RequestAuthHeaderProvider authHeaderProvider) {
         this.webClient = WebClient.builder()
                 .baseUrl(notificationServiceUrl)
                 .build();
+       this.authHeaderProvider = authHeaderProvider;
     }
 
     public void sendNotification(String userId, String email, String message, String type) {
         try {
             webClient.post()
                     .uri("/api/notifications/send")
+                   .headers(headers -> {
+                       String authorization = authHeaderProvider.getAuthorizationHeader();
+                       if (authorization != null && !authorization.isBlank()) {
+                           headers.set("Authorization", authorization);
+                       }
+                   })
                     .bodyValue(Map.of(
                             "userId", userId,
                             "email", email != null ? email : "",

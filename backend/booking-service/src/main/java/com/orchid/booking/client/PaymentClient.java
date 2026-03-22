@@ -12,11 +12,14 @@ import java.util.Map;
 public class PaymentClient {
 
     private final WebClient webClient;
+   private final RequestAuthHeaderProvider authHeaderProvider;
 
-    public PaymentClient(@Value("${payment.service.url}") String paymentServiceUrl) {
+   public PaymentClient(@Value("${payment.service.url}") String paymentServiceUrl,
+                        RequestAuthHeaderProvider authHeaderProvider) {
         this.webClient = WebClient.builder()
                 .baseUrl(paymentServiceUrl)
                 .build();
+       this.authHeaderProvider = authHeaderProvider;
     }
 
     @SuppressWarnings("unchecked")
@@ -32,6 +35,12 @@ public class PaymentClient {
             );
             return webClient.post()
                     .uri("/api/payments")
+                   .headers(headers -> {
+                       String authorization = authHeaderProvider.getAuthorizationHeader();
+                       if (authorization != null && !authorization.isBlank()) {
+                           headers.set("Authorization", authorization);
+                       }
+                   })
                     .bodyValue(paymentRequest)
                     .retrieve()
                     .bodyToMono(Map.class)
@@ -46,6 +55,12 @@ public class PaymentClient {
         try {
             webClient.post()
                     .uri("/api/payments/{id}/refund", paymentId)
+                   .headers(headers -> {
+                       String authorization = authHeaderProvider.getAuthorizationHeader();
+                       if (authorization != null && !authorization.isBlank()) {
+                           headers.set("Authorization", authorization);
+                       }
+                   })
                     .retrieve()
                     .bodyToMono(Object.class)
                     .block();

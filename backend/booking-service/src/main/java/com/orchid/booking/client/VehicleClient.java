@@ -12,11 +12,14 @@ import java.util.Map;
 public class VehicleClient {
 
     private final WebClient webClient;
+   private final RequestAuthHeaderProvider authHeaderProvider;
 
-    public VehicleClient(@Value("${vehicle.service.url}") String vehicleServiceUrl) {
+   public VehicleClient(@Value("${vehicle.service.url}") String vehicleServiceUrl,
+                        RequestAuthHeaderProvider authHeaderProvider) {
         this.webClient = WebClient.builder()
                 .baseUrl(vehicleServiceUrl)
                 .build();
+       this.authHeaderProvider = authHeaderProvider;
     }
 
     @SuppressWarnings("unchecked")
@@ -24,6 +27,12 @@ public class VehicleClient {
         try {
             return webClient.get()
                     .uri("/api/vehicles/{id}", vehicleId)
+                   .headers(headers -> {
+                       String authorization = authHeaderProvider.getAuthorizationHeader();
+                       if (authorization != null && !authorization.isBlank()) {
+                           headers.set("Authorization", authorization);
+                       }
+                   })
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
@@ -37,6 +46,12 @@ public class VehicleClient {
         try {
             webClient.put()
                     .uri("/api/vehicles/{id}/status", vehicleId)
+                   .headers(headers -> {
+                       String authorization = authHeaderProvider.getAuthorizationHeader();
+                       if (authorization != null && !authorization.isBlank()) {
+                           headers.set("Authorization", authorization);
+                       }
+                   })
                     .bodyValue(Map.of("status", status))
                     .retrieve()
                     .bodyToMono(Object.class)

@@ -1,8 +1,7 @@
-version: '3.8'
-
 services:
   mongodb:
     image: mongo:7.0
+    platform: linux/amd64
     container_name: orchid-mongodb
     ports:
       - "27017:27017"
@@ -17,7 +16,7 @@ services:
       dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
     ports:
-      - "8080:8080"
+      - "8087:8087"
     environment:
       - AUTH_SERVICE_URL=http://auth-service:8081
       - VEHICLE_SERVICE_URL=http://vehicle-service:8082
@@ -60,7 +59,7 @@ services:
       - "8082:8082"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb+srv://dinith114:dinith114@cluster0.jaljain.mongodb.net/vehicle-db?retryWrites=true&w=majority&appName=Cluster0
-      - BOOKING_SERVICE_URL=http://api-gateway:8080
+      - BOOKING_SERVICE_URL=http://api-gateway:8087
     dns:
       - 8.8.8.8
       - 1.1.1.1
@@ -77,11 +76,11 @@ services:
     ports:
       - "8083:8083"
     environment:
-      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/booking-db
-      - VEHICLE_SERVICE_URL=http://api-gateway:8080
-      - PAYMENT_SERVICE_URL=http://api-gateway:8080
-      - NOTIFICATION_SERVICE_URL=http://api-gateway:8080
-      - MAINTENANCE_SERVICE_URL=http://api-gateway:8080
+      - SPRING_DATA_MONGODB_URI=mongodb+srv://jayangi:dmjprLC1818@cluster0.g4inw.mongodb.net/vehicle-db?retryWrites=true&w=majority&authSource=admin
+      - VEHICLE_SERVICE_URL=http://api-gateway:8087
+      - PAYMENT_SERVICE_URL=http://api-gateway:8087
+      - NOTIFICATION_SERVICE_URL=http://api-gateway:8087
+      - MAINTENANCE_SERVICE_URL=http://api-gateway:8087
     depends_on:
       - mongodb
     networks:
@@ -115,11 +114,11 @@ services:
       - "8085:8085"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb+srv://user:user123@cluster0.asncl8a.mongodb.net/maintenance_db?retryWrites=true&w=majority
-      - API_GATEWAY_URL=http://api-gateway:8080
-      - AUTH_SERVICE_URL=http://api-gateway:8080
-      - VEHICLE_SERVICE_URL=http://api-gateway:8080
-      - NOTIFICATION_SERVICE_URL=http://api-gateway:8080
-      - PAYMENT_SERVICE_URL=http://api-gateway:8080
+      - API_GATEWAY_URL=http://api-gateway:8087
+      - AUTH_SERVICE_URL=http://api-gateway:8087
+      - VEHICLE_SERVICE_URL=http://api-gateway:8087
+      - NOTIFICATION_SERVICE_URL=http://api-gateway:8087
+      - PAYMENT_SERVICE_URL=http://api-gateway:8087
     depends_on:
       - mongodb
     networks:
