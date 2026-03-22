@@ -43,7 +43,7 @@ services:
     expose:
       - "8081"
     environment:
-      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/auth-db
+      - SPRING_DATA_MONGODB_URI=mongodb+srv://admin:1234@rentals.uierpp9.mongodb.net/auth-db
       - JWT_SECRET=OrchidVehicleRentalSecretKeyForJWTTokenGeneration2024SecureKey
     depends_on:
       - mongodb
