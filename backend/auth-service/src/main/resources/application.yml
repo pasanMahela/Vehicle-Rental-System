@@ -25,3 +25,11 @@ jwt:
 
 access-control:
   user-manage: OWNER
+
+# OpenAPI/Swagger Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
