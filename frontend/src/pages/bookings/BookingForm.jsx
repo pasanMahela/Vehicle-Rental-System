@@ -18,7 +18,7 @@ const { RangePicker } = DatePicker;
 const formatLKR = (val) =>
   val != null ? val.toLocaleString('en-LK') : '0';
 
-export default function BookingForm({ open, onClose, onSaved }) {
+export default function BookingForm({ open, onClose, onSaved, initialVehicleId = null }) {
   const { user, hasRole } = useAuth();
   const { message } = App.useApp();
   const [form] = Form.useForm();
@@ -51,14 +51,15 @@ export default function BookingForm({ open, onClose, onSaved }) {
         .catch(() => message.error('Failed to load vehicles'));
 
       form.resetFields();
-      setSelectedVehicle(null);
+      setSelectedVehicle(initialVehicleId);
       setDateRange(null);
       form.setFieldsValue({
+        vehicleId: initialVehicleId,
         customerEmail: user?.email || '',
         customerId: hasRole('BOOKING_CASHIER', 'OWNER') ? '' : user?.userId,
       });
     }
-  }, [open, user, hasRole, form]);
+  }, [open, user, hasRole, form, initialVehicleId]);
 
   const handleSubmit = async () => {
     try {
@@ -98,7 +99,7 @@ export default function BookingForm({ open, onClose, onSaved }) {
 
   const vehicleOptions = vehicles.map((v) => ({
     value: v.vehicleId,
-    label: `${v.brand || ''} ${v.model || ''}`.trim() + ` - LKR ${formatLKR(v.pricePerDay)}/day`,
+    label: `${v.brand || ''} ${v.model || ''} (${v.type || 'Vehicle'}) - LKR ${formatLKR(v.pricePerDay)}/day`,
   }));
 
   return (
@@ -173,19 +174,20 @@ export default function BookingForm({ open, onClose, onSaved }) {
 
         {(totalAmount > 0 || advanceRequired > 0) && (
           <>
-            <Divider>Booking Summary</Divider>
-            <div className="space-y-1 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
-              <div className="flex justify-between">
-                <span>Total:</span>
-                <span className="font-medium">LKR {formatLKR(totalAmount)}</span>
+            <Divider className="my-4"><span className="text-gray-400">Booking Summary</span></Divider>
+            <div className="space-y-2 rounded-xl border border-blue-100 bg-blue-50/50 p-4 text-sm shadow-sm transition-all">
+              <div className="flex justify-between text-gray-600">
+                <span>Total Amount:</span>
+                <span className="font-medium text-gray-900">LKR {formatLKR(totalAmount)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between text-gray-600">
                 <span>Advance Required:</span>
-                <span className="font-medium">LKR {formatLKR(advanceRequired)}</span>
+                <span className="font-medium text-orange-500">LKR {formatLKR(advanceRequired)}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Remaining Balance:</span>
-                <span className="font-medium">LKR {formatLKR(remainingBalance)}</span>
+              <div className="my-2 border-t border-blue-100"></div>
+              <div className="flex justify-between text-base">
+                <span className="font-semibold text-gray-800">Remaining Balance:</span>
+                <span className="font-bold text-blue-600">LKR {formatLKR(remainingBalance)}</span>
               </div>
             </div>
           </>
