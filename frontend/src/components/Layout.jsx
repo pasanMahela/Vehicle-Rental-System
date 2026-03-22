@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Layout as AntLayout, Menu, Avatar, Badge, Popover, Button, Typography, App } from 'antd';
+import { Layout as AntLayout, Menu, Avatar, Badge, Popover, Button, Typography, App, Dropdown, Space } from 'antd';
 import {
   DashboardOutlined,
   CarOutlined,
@@ -13,8 +13,10 @@ import {
   UserOutlined,
   CheckOutlined,
   CheckCircleOutlined,
+  DownOutlined,
+  MenuOutlined,
 } from '@ant-design/icons';
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   getUnreadCount,
@@ -23,7 +25,7 @@ import {
   markAllAsRead,
 } from '../api/notificationApi';
 
-const { Header, Sider, Content } = AntLayout;
+const { Header, Content } = AntLayout;
 
 const NOTIF_TYPE_ROUTES = {
   BOOKING_CONFIRMATION: '/dashboard/bookings',
@@ -48,15 +50,6 @@ function getNavItems(hasRole) {
 
   if (hasRole('REPAIR_ADVISOR') || hasRole('OWNER')) {
     items.push({ key: '/dashboard/maintenance', icon: <ToolOutlined />, label: 'Maintenance' });
-  }
-
-  if (hasRole('CUSTOMER') || hasRole('BOOKING_CASHIER') || hasRole('OWNER')) {
-    items.push({ key: '/dashboard/notifications', icon: <BellOutlined />, label: 'Notifications' });
-  }
-
-  if (hasRole('OWNER')) {
-    items.push({ key: '/dashboard/users', icon: <TeamOutlined />, label: 'Users' });
-    items.push({ key: '/dashboard/settings', icon: <SettingOutlined />, label: 'Settings' });
   }
 
   return items;
@@ -86,6 +79,7 @@ export default function Layout() {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!user?.userId) return;
@@ -175,72 +169,208 @@ export default function Layout() {
 
   const navItems = getNavItems(hasRole);
 
+  const userMenuItems = [
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: 'Profile',
+      onClick: () => navigate('/dashboard/profile'),
+    },
+    {
+      key: 'notifications',
+      icon: <BellOutlined />,
+      label: 'Notifications',
+      onClick: () => navigate('/dashboard/notifications'),
+    },
+    ...(hasRole('OWNER') ? [
+      {
+        key: 'users',
+        icon: <TeamOutlined />,
+        label: 'Manage Users',
+        onClick: () => navigate('/dashboard/users'),
+      },
+      {
+        key: 'settings',
+        icon: <SettingOutlined />,
+        label: 'Settings',
+        onClick: () => navigate('/dashboard/settings'),
+      },
+    ] : []),
+    { type: 'divider' },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: 'Logout',
+      danger: true,
+      onClick: handleLogout,
+    },
+  ];
+
   const notificationContent = (
-    <div className="w-[320px]">
-      <div className="flex items-center justify-between mb-3">
-        <Typography.Text strong>Notifications</Typography.Text>
+    <div style={{ width: 380, borderRadius: 16, overflow: 'hidden' }}>
+      {/* Header */}
+      <div 
+        style={{ 
+          background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <BellOutlined style={{ color: '#ffffff', fontSize: 18 }} />
+          <span style={{ color: '#ffffff', fontSize: 16, fontWeight: 600 }}>Notifications</span>
+          {unreadCount > 0 && (
+            <span style={{ 
+              backgroundColor: '#ef4444', 
+              color: '#ffffff', 
+              borderRadius: 12,
+              padding: '2px 8px',
+              fontSize: 11,
+              fontWeight: 600
+            }}>
+              {unreadCount} new
+            </span>
+          )}
+        </div>
         {unreadCount > 0 && (
           <Button
-            type="link"
+            type="text"
             size="small"
             icon={<CheckCircleOutlined />}
             onClick={handleMarkAllRead}
-            className="p-0 h-auto"
+            style={{ color: 'rgba(255,255,255,0.9)', padding: 0, height: 'auto', fontSize: 12 }}
           >
             Mark all read
           </Button>
         )}
       </div>
-      <div className="max-h-[360px] overflow-y-auto">
+      
+      {/* Notifications List */}
+      <div style={{ maxHeight: 400, overflowY: 'auto', backgroundColor: '#ffffff' }}>
         {loadingNotifs && notifications.length === 0 ? (
-          <div className="py-8 text-center">
-            <Typography.Text type="secondary">Loading...</Typography.Text>
+          <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+            <div style={{ 
+              width: 48, 
+              height: 48, 
+              borderRadius: '50%', 
+              backgroundColor: '#f3f4f6', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              margin: '0 auto 12px'
+            }}>
+              <BellOutlined style={{ fontSize: 24, color: '#9ca3af' }} />
+            </div>
+            <span style={{ color: '#6b7280' }}>Loading notifications...</span>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="py-8 text-center">
-            <Typography.Text type="secondary">No notifications</Typography.Text>
+          <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+            <div style={{ 
+              width: 64, 
+              height: 64, 
+              borderRadius: '50%', 
+              backgroundColor: '#f3f4f6', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              margin: '0 auto 16px'
+            }}>
+              <BellOutlined style={{ fontSize: 28, color: '#9ca3af' }} />
+            </div>
+            <span style={{ color: '#374151', fontWeight: 500, display: 'block', marginBottom: 4 }}>
+              No notifications yet
+            </span>
+            <span style={{ color: '#9ca3af', fontSize: 13 }}>
+              We'll notify you when something arrives
+            </span>
           </div>
         ) : (
-          <div className="space-y-0">
-            {notifications.map((notif) => (
+          <div>
+            {notifications.map((notif, index) => (
               <div
                 key={notif.notificationId}
-                className={`flex items-start gap-2 px-3 py-2.5 cursor-pointer transition-colors rounded ${
-                  notif.read
-                    ? 'hover:bg-gray-50'
-                    : 'bg-blue-50 hover:bg-blue-100'
-                }`}
+                style={{ 
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                  padding: '14px 20px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  backgroundColor: notif.read ? '#ffffff' : '#eff6ff',
+                  borderBottom: index < notifications.length - 1 ? '1px solid #f3f4f6' : 'none'
+                }}
                 onClick={() => handleClickNotification(notif)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = notif.read ? '#f9fafb' : '#dbeafe';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = notif.read ? '#ffffff' : '#eff6ff';
+                }}
               >
-                <div className="mt-1 flex-shrink-0">
+                {/* Status Indicator */}
+                <div style={{ paddingTop: 6, width: 8 }}>
                   {!notif.read && (
-                    <span className="w-2 h-2 rounded-full bg-blue-500 block" />
+                    <span style={{ 
+                      width: 8, 
+                      height: 8, 
+                      borderRadius: '50%', 
+                      backgroundColor: '#3b82f6',
+                      display: 'block',
+                      boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.2)'
+                    }} />
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <Typography.Text
-                    type="secondary"
-                    className="text-xs uppercase tracking-wide block"
-                  >
-                    {(notif.notificationType || 'GENERAL').replaceAll('_', ' ')}
-                  </Typography.Text>
-                  <Typography.Text
-                    className={notif.read ? '' : 'font-medium'}
-                    ellipsis={{ rows: 2 }}
-                  >
+                
+                {/* Content */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 8, 
+                    marginBottom: 4 
+                  }}>
+                    <span style={{ 
+                      fontSize: 10, 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '0.5px',
+                      color: '#6b7280',
+                      fontWeight: 600
+                    }}>
+                      {(notif.notificationType || 'GENERAL').replaceAll('_', ' ')}
+                    </span>
+                    <span style={{ fontSize: 10, color: '#9ca3af' }}>•</span>
+                    <span style={{ fontSize: 11, color: '#9ca3af' }}>
+                      {timeAgo(notif.sentDate)}
+                    </span>
+                  </div>
+                  <p style={{ 
+                    margin: 0,
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    color: notif.read ? '#6b7280' : '#1f2937',
+                    fontWeight: notif.read ? 400 : 500
+                  }}>
                     {notif.message}
-                  </Typography.Text>
-                  <Typography.Text type="secondary" className="text-xs block mt-0.5">
-                    {timeAgo(notif.sentDate)}
-                  </Typography.Text>
+                  </p>
                 </div>
+                
+                {/* Mark as Read Button */}
                 {!notif.read && (
                   <Button
                     type="text"
                     size="small"
-                    icon={<CheckOutlined />}
+                    icon={<CheckOutlined style={{ fontSize: 12 }} />}
                     onClick={(e) => handleMarkAsRead(e, notif)}
-                    className="flex-shrink-0"
+                    style={{ 
+                      opacity: 0.5,
+                      padding: '4px 8px',
+                      height: 'auto',
+                      borderRadius: 6
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = 0.5}
                   />
                 )}
               </div>
@@ -248,79 +378,185 @@ export default function Layout() {
           </div>
         )}
       </div>
+      
+      {/* Footer */}
       <div
-        className="text-center py-2 mt-2 border-t cursor-pointer hover:bg-gray-50 rounded transition-colors"
+        style={{ 
+          padding: '12px 20px',
+          textAlign: 'center',
+          borderTop: '1px solid #f3f4f6',
+          backgroundColor: '#fafafa',
+          cursor: 'pointer',
+          transition: 'background-color 0.2s'
+        }}
         onClick={() => {
           setPopoverOpen(false);
           navigate('/dashboard/notifications');
         }}
+        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fafafa'}
       >
-        <Typography.Link>View All Notifications</Typography.Link>
+        <span style={{ color: '#3b82f6', fontWeight: 500, fontSize: 13 }}>
+          View All Notifications →
+        </span>
       </div>
     </div>
   );
 
   return (
-    <AntLayout className="min-h-screen">
-      <Sider
-        width={260}
-        className="!bg-white border-r border-gray-200 shadow-sm"
-        theme="light"
+    <AntLayout className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <Header 
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 lg:px-8 h-16"
+        style={{ 
+          background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        }}
       >
-        <div className="h-16 flex items-center px-6 border-b border-gray-100">
-          <CarOutlined className="text-xl text-[#1677ff] mr-2" />
-          <Typography.Title level={5} className="!mb-0">
-            Vehicle Rental
-          </Typography.Title>
-        </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={navItems}
-          onClick={({ key }) => navigate(key)}
-          className="border-0 mt-4 px-2"
-          style={{ fontSize: 14 }}
-        />
-      </Sider>
+        {/* Logo Section */}
+        <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline">
+          <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
+            <CarOutlined style={{ fontSize: 20, color: '#ffffff' }} />
+          </div>
+          <span className="text-lg font-bold text-white hidden sm:block" style={{ color: '#ffffff' }}>
+            Orchid Rentals
+          </span>
+        </Link>
 
-      <AntLayout>
-        <Header className="flex items-center justify-end gap-4 px-6 bg-white border-b border-gray-200 shadow-sm h-16">
-          <Typography.Text className="text-gray-600">
-            {user?.username}
-          </Typography.Text>
-          <Avatar icon={<UserOutlined />} className="bg-[#1677ff]" size="small" />
+        {/* Desktop Navigation */}
+        <nav className="hidden lg:flex items-center gap-1">
+          {navItems.map((item) => (
+            <Link
+              key={item.key}
+              to={item.key}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-sm font-medium no-underline"
+              style={{ 
+                backgroundColor: location.pathname === item.key ? 'rgba(255,255,255,0.2)' : 'transparent',
+                color: '#ffffff'
+              }}
+              onMouseEnter={(e) => {
+                if (location.pathname !== item.key) {
+                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (location.pathname !== item.key) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
+            >
+              <span style={{ color: '#ffffff' }}>{item.icon}</span>
+              <span style={{ color: '#ffffff' }}>{item.label}</span>
+            </Link>
+          ))}
+        </nav>
 
+        {/* Right Section */}
+        <div className="flex items-center gap-2">
+          {/* Notifications */}
           <Popover
             content={notificationContent}
             trigger="click"
             open={popoverOpen}
             onOpenChange={setPopoverOpen}
             placement="bottomRight"
+            arrow={false}
+            overlayInnerStyle={{ 
+              padding: 0, 
+              borderRadius: 16, 
+              boxShadow: '0 20px 50px rgba(0,0,0,0.15), 0 10px 20px rgba(0,0,0,0.1)',
+              overflow: 'hidden'
+            }}
           >
-            <Badge count={unreadCount} size="small" offset={[-2, 2]}>
+            <Badge count={unreadCount} size="small" offset={[-4, 4]}>
               <Button
                 type="text"
-                icon={<BellOutlined className="text-lg" />}
+                icon={<BellOutlined style={{ fontSize: 18, color: '#ffffff' }} />}
                 onClick={handleBellClick}
-                className="flex items-center justify-center"
+                className="flex items-center justify-center w-10 h-10 rounded-lg"
+                style={{ backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               />
             </Badge>
           </Popover>
 
+          {/* User Dropdown */}
+          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>
+            <Button 
+              type="text" 
+              className="flex items-center gap-2 h-10 px-3 rounded-lg border-0"
+              style={{ backgroundColor: 'transparent' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <Avatar 
+                icon={<UserOutlined />} 
+                size="small"
+                style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+              />
+              <span className="font-medium hidden md:inline" style={{ color: '#ffffff' }}>{user?.username}</span>
+              <DownOutlined className="text-xs hidden md:inline" style={{ color: 'rgba(255,255,255,0.7)' }} />
+            </Button>
+          </Dropdown>
+
+          {/* Mobile Menu Button */}
           <Button
             type="text"
-            danger
-            icon={<LogoutOutlined />}
-            onClick={handleLogout}
-          >
-            Logout
-          </Button>
-        </Header>
+            icon={<MenuOutlined style={{ fontSize: 18, color: '#ffffff' }} />}
+            className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg"
+            style={{ backgroundColor: 'transparent' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          />
+        </div>
+      </Header>
 
-        <Content className="bg-gray-50 p-6 overflow-auto">
+      {/* Mobile Navigation Dropdown */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed top-16 left-0 right-0 z-40 bg-white border-b shadow-lg">
+          <nav className="p-4 space-y-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.key}
+                to={item.key}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                  location.pathname === item.key
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span className="text-lg">{item.icon}</span>
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            ))}
+          </nav>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <Content className="pt-16 min-h-screen">
+        <div className="p-4 lg:p-6 max-w-7xl mx-auto">
           <Outlet />
-        </Content>
-      </AntLayout>
+        </div>
+      </Content>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-6">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2 text-gray-500">
+              <CarOutlined />
+              <span className="font-medium">Orchid Vehicle Rental</span>
+            </div>
+            <Typography.Text type="secondary" className="text-sm">
+              © {new Date().getFullYear()} Orchid Rentals. All rights reserved.
+            </Typography.Text>
+          </div>
+        </div>
+      </footer>
     </AntLayout>
   );
 }
