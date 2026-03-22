@@ -41,7 +41,8 @@ public class Notification {
         PAYMENT_FAILURE,
         MAINTENANCE_ALERT,
         DAMAGE_CHARGE,
-        BOOKING_REMINDER
+        BOOKING_REMINDER,
+        SYSTEM_ALERT
     }
 
     public enum NotificationStatus {

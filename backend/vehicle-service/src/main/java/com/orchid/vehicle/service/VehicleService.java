@@ -1,6 +1,7 @@
 package com.orchid.vehicle.service;
 
 import com.orchid.vehicle.client.BookingClient;
+import com.orchid.vehicle.client.NotificationClient;
 import com.orchid.vehicle.dto.VehicleDTO;
 import com.orchid.vehicle.model.Vehicle;
 import com.orchid.vehicle.repository.VehicleRepository;
@@ -18,6 +19,7 @@ public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final BookingClient bookingClient;
+    private final NotificationClient notificationClient;
 
     public Vehicle addVehicle(VehicleDTO dto) {
         Vehicle vehicle = new Vehicle();
@@ -27,8 +29,15 @@ public class VehicleService {
         vehicle.setType(dto.getType());
         vehicle.setPricePerDay(dto.getPricePerDay());
         vehicle.setAdvanceDeposit(dto.getAdvanceDeposit());
+        vehicle.setImageUrl(dto.getImageUrl());
         vehicle.setAvailabilityStatus(Vehicle.AvailabilityStatus.AVAILABLE);
-        return vehicleRepository.save(vehicle);
+        Vehicle savedVehicle = vehicleRepository.save(vehicle);
+
+        // Send a notification when a new vehicle is added
+        String message = String.format("A new %s %s has been added to the fleet.", savedVehicle.getBrand(), savedVehicle.getModel());
+        notificationClient.sendSystemNotification(message, "SYSTEM_ALERT");
+
+        return savedVehicle;
     }
 
     public Vehicle updateVehicle(String id, VehicleDTO dto) {
@@ -39,6 +48,7 @@ public class VehicleService {
         vehicle.setType(dto.getType());
         vehicle.setPricePerDay(dto.getPricePerDay());
         vehicle.setAdvanceDeposit(dto.getAdvanceDeposit());
+        vehicle.setImageUrl(dto.getImageUrl());
         if (dto.getAvailabilityStatus() != null) {
             vehicle.setAvailabilityStatus(Vehicle.AvailabilityStatus.valueOf(dto.getAvailabilityStatus()));
         }
