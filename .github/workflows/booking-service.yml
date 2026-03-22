@@ -10,6 +10,7 @@ on:
     branches: [ main ]
     paths:
       - 'backend/booking-service/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,6 +19,7 @@ permissions:
 
 env:
   SERVICE_PATH: backend/booking-service
+  ACR_LOGIN_SERVER: orchidacr11.azurecr.io
 
 jobs:
   # Job 1: Build and Test
@@ -149,18 +151,43 @@ jobs:
       - name: Login to ACR
         uses: docker/login-action@v3
         with:
-          registry: ${{ secrets.ACR_LOGIN_SERVER }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.BOOKINGSERVICE_REGISTRY_USERNAME }}
+          password: ${{ secrets.BOOKINGSERVICE_REGISTRY_PASSWORD }}
 
       - name: Build and push Docker image to ACR
         uses: docker/build-push-action@v5
         with:
-          context: ./backend/booking-service
+          context: ./backend
           file: ./backend/booking-service/Dockerfile
           push: true
           tags: |
-            ${{ secrets.ACR_LOGIN_SERVER }}/booking-service:latest
-            ${{ secrets.ACR_LOGIN_SERVER }}/booking-service:${{ github.sha }}
+            ${{ env.ACR_LOGIN_SERVER }}/booking-service:latest
+            ${{ env.ACR_LOGIN_SERVER }}/booking-service:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Job 5: Deploy to Azure Container Apps
+  deploy:
+    name: Deploy to Azure Container Apps
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.BOOKINGSERVICE_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.BOOKINGSERVICE_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.BOOKINGSERVICE_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Update Container App image
+        run: |
+          az containerapp update \
+            --name booking-service \
+            --resource-group orchid-rental-rg \
+            --image "${{ env.ACR_LOGIN_SERVER }}/booking-service:${{ github.sha }}"
