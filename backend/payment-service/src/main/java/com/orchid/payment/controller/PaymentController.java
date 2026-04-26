@@ -39,15 +39,13 @@ public class PaymentController {
 
     @Operation(summary = "Create a new payment", description = "Creates a new payment record. Requires BOOKING_CASHIER or OWNER role.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Payment created successfully",
-                    content = @Content(schema = @Schema(implementation = Payment.class))),
+            @ApiResponse(responseCode = "201", description = "Payment created successfully", content = @Content(schema = @Schema(implementation = Payment.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
     @PostMapping
     public ResponseEntity<Payment> createPayment(@Valid @RequestBody PaymentDTO dto,
-                                                  @Parameter(description = "User role for authorization")
-                                                  @RequestHeader(value = "X-User-Role", required = false) String role) {
+            @Parameter(description = "User role for authorization") @RequestHeader(value = "X-User-Role", required = false) String role) {
         validateRole(role, accessConfig.getPaymentManageRoles(), "Payment creation");
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.createPayment(dto));
     }
@@ -59,10 +57,8 @@ public class PaymentController {
     })
     @GetMapping
     public ResponseEntity<List<Payment>> getAllPayments(
-            @Parameter(description = "User ID for customer filtering")
-            @RequestHeader(value = "X-User-Id", required = false) String userId,
-            @Parameter(description = "User role for authorization")
-            @RequestHeader(value = "X-User-Role", required = false) String role) {
+            @Parameter(description = "User ID for customer filtering") @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @Parameter(description = "User role for authorization") @RequestHeader(value = "X-User-Role", required = false) String role) {
         if (role == null || accessConfig.getPaymentViewRoles().contains(role)) {
             return ResponseEntity.ok(paymentService.getAllPayments());
         }
@@ -82,8 +78,7 @@ public class PaymentController {
     public ResponseEntity<Payment> updatePaymentStatus(
             @Parameter(description = "Payment ID") @PathVariable String id,
             @RequestBody Map<String, String> body,
-            @Parameter(description = "User role for authorization")
-            @RequestHeader(value = "X-User-Role", required = false) String role) {
+            @Parameter(description = "User role for authorization") @RequestHeader(value = "X-User-Role", required = false) String role) {
         validateRole(role, accessConfig.getPaymentManageRoles(), "Payment status update");
         return ResponseEntity.ok(paymentService.updatePaymentStatus(id, body.get("status")));
     }
@@ -122,10 +117,12 @@ public class PaymentController {
             @Parameter(description = "Customer ID") @PathVariable String customerId,
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestHeader(value = "X-User-Role", required = false) String role) {
-        if (role == null) { /* internal */ }
-        else if (accessConfig.getPaymentViewRoles().contains(role)) { /* staff */ }
-        else if ("CUSTOMER".equals(role) && userId != null && userId.equals(customerId)) { /* own */ }
-        else { throw new RuntimeException("Access denied"); }
+        if (role == null) {
+            /* internal */ } else if (accessConfig.getPaymentViewRoles().contains(role)) {
+            /* staff */ } else if ("CUSTOMER".equals(role) && userId != null && userId.equals(customerId)) {
+            /* own */ } else {
+            throw new RuntimeException("Access denied");
+        }
         return ResponseEntity.ok(paymentService.getPaymentsByCustomerId(customerId));
     }
 
@@ -157,12 +154,14 @@ public class PaymentController {
 
         try {
             Map<String, Object> booking = bookingClient.getBookingById(bookingId);
-            if (booking == null) throw new RuntimeException("Booking not found");
-            
+            if (booking == null)
+                throw new RuntimeException("Booking not found");
+
             String vId = (String) booking.get("vehicleId");
             if (vId != null) {
                 Map<String, Object> vehicle = vehicleClient.getVehicleById(vId);
-                if (vehicle == null) throw new RuntimeException("Vehicle not found");
+                if (vehicle == null)
+                    throw new RuntimeException("Vehicle not found");
             }
         } catch (Exception e) {
             throw new RuntimeException("Booking validation failed: " + e.getMessage());
@@ -188,6 +187,7 @@ public class PaymentController {
         return ResponseEntity.ok(result);
     }
 
+    // test ci/cd trigger
     @PostMapping("/confirm")
     public ResponseEntity<Payment> confirmPayment(@RequestBody Map<String, String> body) {
         String paymentId = body.get("paymentId");
@@ -199,14 +199,18 @@ public class PaymentController {
     }
 
     private void validateViewAccess(String ownerId, String userId, String role) {
-        if (role == null) return;
-        if (accessConfig.getPaymentViewRoles().contains(role)) return;
-        if ("CUSTOMER".equals(role) && userId != null && userId.equals(ownerId)) return;
+        if (role == null)
+            return;
+        if (accessConfig.getPaymentViewRoles().contains(role))
+            return;
+        if ("CUSTOMER".equals(role) && userId != null && userId.equals(ownerId))
+            return;
         throw new RuntimeException("Access denied: You can only view your own payments");
     }
 
     private void validateRole(String userRole, List<String> allowedRoles, String operation) {
-        if (userRole == null) return;
+        if (userRole == null)
+            return;
         if (!allowedRoles.contains(userRole)) {
             throw new RuntimeException("Access denied: " + operation + " requires one of " + allowedRoles);
         }
