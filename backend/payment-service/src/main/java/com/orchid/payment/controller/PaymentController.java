@@ -197,7 +197,7 @@ public class PaymentController {
         payment.setPaymentStatus(Payment.PaymentStatus.SUCCESS);
         return ResponseEntity.ok(paymentService.updatePaymentStatus(paymentId, "SUCCESS"));
     }
-
+    //test build
     private void validateViewAccess(String ownerId, String userId, String role) {
         if (role == null) return;
         if (accessConfig.getPaymentViewRoles().contains(role)) return;
